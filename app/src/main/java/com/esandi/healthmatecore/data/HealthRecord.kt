@@ -1,15 +1,24 @@
 package com.esandi.healthmatecore.data
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "health_records")
 data class HealthRecord(
+    @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
     val date: String,
     val time: String,
     val steps: Int = 0,
     val calories: Int = 0,
+    @ColumnInfo(name = "water")
     val waterMl: Int = 0,
+    @ColumnInfo(name = "sleep_minutes")
     val sleepMinutes: Int = 0,
     val note: String? = null
 )
+
 fun sampleRecords(): List<HealthRecord> {
     return listOf(
         HealthRecord(
