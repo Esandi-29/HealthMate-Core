@@ -8,20 +8,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Button
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.esandi.healthmatecore.data.HealthRecord
+import com.esandi.healthmatecore.data.sampleRecords
+import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,10 +43,53 @@ class MainActivity : ComponentActivity() {
                     ) {
                         WelcomeHeader()
                         StepCounter()
+                        RecordList(records = sampleRecords())
                     }
                 }
-
             }
+        }
+    }
+}
+
+@Composable
+fun RecordRow(record: HealthRecord) {
+    val recordedText = when {
+        record.steps > 0 -> "${record.steps} steps"
+        record.calories > 0 -> "${record.calories} calories burned"
+        record.waterMl > 0 -> "${record.waterMl} ml water"
+        record.sleepMinutes > 0 ->
+            "${record.sleepMinutes / 60}h ${record.sleepMinutes % 60}m sleep"
+
+        !record.note.isNullOrBlank() -> record.note
+        else -> "No health data recorded"
+    }
+
+    Column(
+        modifier = Modifier.padding(
+            horizontal = 16.dp,
+            vertical = 8.dp
+        )
+    ) {
+        Text(
+            text = "${record.date} • ${record.time}",
+            fontSize = 16.sp
+        )
+
+        Text(
+            text = recordedText ?: "No health data recorded",
+            fontSize = 14.sp
+        )
+    }
+}
+
+@Composable
+fun RecordList(
+    records: List<HealthRecord>,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier = modifier) {
+        items(records) { record ->
+            RecordRow(record = record)
         }
     }
 }
@@ -58,7 +106,7 @@ fun StepCounter(modifier: Modifier = Modifier) {
             fontSize = 24.sp
         )
 
-        Row (horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
                 onClick = { steps += 500 }
             ) {
