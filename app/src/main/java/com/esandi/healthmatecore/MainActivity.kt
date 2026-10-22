@@ -34,6 +34,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
 import com.esandi.healthmatecore.records.RecordListViewModel
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.input.KeyboardType
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,7 +71,13 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         WelcomeHeader()
-                        StepCounter()
+
+                        AddRecordForm(
+                            onSave = { record ->
+                                viewModel.addRecord(record)
+                            }
+                        )
+
                         RecordList(records = records)
                     }
                 }
@@ -72,7 +85,80 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+@Composable
+fun AddRecordForm(
+    onSave: (HealthRecord) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var stepsText by remember { mutableStateOf("") }
+    var caloriesText by remember { mutableStateOf("") }
+    var waterText by remember { mutableStateOf("") }
+    var sleepText by remember { mutableStateOf("") }
 
+    Column(
+        modifier = modifier.padding(16.dp)
+    ) {
+        OutlinedTextField(
+            value = stepsText,
+            onValueChange = { stepsText = it },
+            label = { Text("Steps") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            )
+        )
+
+        OutlinedTextField(
+            value = caloriesText,
+            onValueChange = { caloriesText = it },
+            label = { Text("Calories burned") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            )
+        )
+
+        OutlinedTextField(
+            value = waterText,
+            onValueChange = { waterText = it },
+            label = { Text("Water (ml)") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            )
+        )
+
+        OutlinedTextField(
+            value = sleepText,
+            onValueChange = { sleepText = it },
+            label = { Text("Sleep (minutes)") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            )
+        )
+
+        Button(
+            onClick = {
+                val record = HealthRecord(
+                    date = LocalDate.now().toString(),
+                    time = LocalTime.now().format(
+                        DateTimeFormatter.ofPattern("HH:mm")
+                    ),
+                    steps = stepsText.toIntOrNull() ?: 0,
+                    calories = caloriesText.toIntOrNull() ?: 0,
+                    waterMl = waterText.toIntOrNull() ?: 0,
+                    sleepMinutes = sleepText.toIntOrNull() ?: 0
+                )
+
+                onSave(record)
+
+                stepsText = ""
+                caloriesText = ""
+                waterText = ""
+                sleepText = ""
+            }
+        ) {
+            Text("Save")
+        }
+    }
+}
 @Composable
 fun RecordRow(record: HealthRecord) {
     val recordedText = when {

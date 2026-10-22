@@ -7,9 +7,10 @@ import com.esandi.healthmatecore.data.HealthRecordRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class RecordListViewModel(
-    repository: HealthRecordRepository
+    private val repository: HealthRecordRepository
 ) : ViewModel() {
 
     val records: StateFlow<List<HealthRecord>> =
@@ -18,4 +19,9 @@ class RecordListViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
+    fun addRecord(record: HealthRecord) {
+        viewModelScope.launch {
+            repository.addRecord(record)
+        }
+    }
 }
