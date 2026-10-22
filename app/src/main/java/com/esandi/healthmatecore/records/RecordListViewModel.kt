@@ -19,9 +19,16 @@ class RecordListViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
+
     fun addRecord(record: HealthRecord) {
         viewModelScope.launch {
             repository.addRecord(record)
+        }
+    }
+
+    fun deleteRecord(record: HealthRecord) {
+        viewModelScope.launch {
+            repository.deleteRecord(record)
         }
     }
 }

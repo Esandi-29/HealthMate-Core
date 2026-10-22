@@ -41,6 +41,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.AlertDialog
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,13 +81,19 @@ class MainActivity : ComponentActivity() {
                             }
                         )
 
-                        RecordList(records = records)
+                        RecordList(
+                            records = records,
+                            onDelete = { record ->
+                                viewModel.deleteRecord(record)
+                            }
+                        )
                     }
                 }
             }
         }
     }
 }
+
 @Composable
 fun AddRecordForm(
     onSave: (HealthRecord) -> Unit,
@@ -159,8 +168,12 @@ fun AddRecordForm(
         }
     }
 }
+
 @Composable
-fun RecordRow(record: HealthRecord) {
+fun RecordRow(
+    record: HealthRecord,
+    onDeleteClick: () -> Unit
+) {
     val recordedText = when {
         record.steps > 0 -> "${record.steps} steps"
         record.calories > 0 -> "${record.calories} calories burned"
@@ -172,33 +185,89 @@ fun RecordRow(record: HealthRecord) {
         else -> "No health data recorded"
     }
 
-    Column(
+    Row(
         modifier = Modifier.padding(
             horizontal = 16.dp,
             vertical = 8.dp
-        )
+        ),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "${record.date} • ${record.time}",
-            fontSize = 16.sp
-        )
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = "${record.date} • ${record.time}",
+                fontSize = 16.sp
+            )
 
-        Text(
-            text = recordedText ?: "No health data recorded",
-            fontSize = 14.sp
-        )
+            Text(
+                text = recordedText ?: "No health data recorded",
+                fontSize = 14.sp
+            )
+        }
+
+        TextButton(
+            onClick = onDeleteClick
+        ) {
+            Text("Delete")
+        }
     }
 }
 
 @Composable
 fun RecordList(
     records: List<HealthRecord>,
+    onDelete: (HealthRecord) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var recordToDelete by remember {
+        mutableStateOf<HealthRecord?>(null)
+    }
+
     LazyColumn(modifier = modifier) {
         items(records) { record ->
-            RecordRow(record = record)
+            RecordRow(
+                record = record,
+                onDeleteClick = {
+                    recordToDelete = record
+                }
+            )
         }
+    }
+
+    recordToDelete?.let { record ->
+        AlertDialog(
+            onDismissRequest = {
+                recordToDelete = null
+            },
+            title = {
+                Text("Delete record?")
+            },
+            text = {
+                Text(
+                    "The record from ${record.date} at ${record.time} will be deleted."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(record)
+                        recordToDelete = null
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        recordToDelete = null
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
