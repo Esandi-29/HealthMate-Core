@@ -29,4 +29,11 @@ class HealthRecordRepository(
     suspend fun deleteRecord(record: HealthRecord) {
         healthRecordDao.delete(record)
     }
+    suspend fun addSampleDataIfEmpty() {
+        if (healthRecordDao.countRecords() == 0) {
+            for (record in sampleRecords()) {
+                healthRecordDao.insert(record)
+            }
+        }
+    }
 }

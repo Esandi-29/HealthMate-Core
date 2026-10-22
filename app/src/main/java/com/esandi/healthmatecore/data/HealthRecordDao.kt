@@ -36,4 +36,6 @@ interface HealthRecordDao {
         "SELECT * FROM health_records WHERE id = :id"
     )
     suspend fun getRecordById(id: Long): HealthRecord?
+    @Query("SELECT COUNT(*) FROM health_records")
+    suspend fun countRecords(): Int
 }

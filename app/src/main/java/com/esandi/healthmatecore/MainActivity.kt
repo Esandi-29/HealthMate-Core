@@ -26,12 +26,21 @@ import androidx.compose.ui.unit.sp
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.data.sampleRecords
 import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
-
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.esandi.healthmatecore.data.HealthMateDatabase
+import com.esandi.healthmatecore.data.HealthRecordRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val database = HealthMateDatabase.getDatabase(this)
+        val repository = HealthRecordRepository(database.healthRecordDao())
+
+        lifecycleScope.launch {
+            repository.addSampleDataIfEmpty()
+        }
 
         setContent {
             HealthMateCoreTheme {
