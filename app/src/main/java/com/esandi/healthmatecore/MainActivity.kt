@@ -44,6 +44,10 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FloatingActionButton
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,24 +71,32 @@ class MainActivity : ComponentActivity() {
 
             val records by viewModel.records.collectAsState()
             HealthMateCoreTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
-                        WelcomeHeader()
+                val navController = rememberNavController()
 
-                        AddRecordForm(
-                            onSave = { record ->
-                                viewModel.addRecord(record)
-                            }
-                        )
-
-                        RecordList(
+                NavHost(
+                    navController = navController,
+                    startDestination = "records"
+                ) {
+                    composable("records") {
+                        RecordsScreen(
                             records = records,
+                            onAddClick = {
+                                navController.navigate("add")
+                            },
                             onDelete = { record ->
                                 viewModel.deleteRecord(record)
+                            }
+                        )
+                    }
+
+                    composable("add") {
+                        AddRecordScreen(
+                            onSave = { record ->
+                                viewModel.addRecord(record)
+                                navController.popBackStack()
+                            },
+                            onCancel = {
+                                navController.popBackStack()
                             }
                         )
                     }
@@ -314,6 +326,67 @@ fun WelcomeHeader(modifier: Modifier = Modifier) {
             text = "Welcome back, Esandi",
             fontSize = 18.sp
         )
+    }
+}
+
+@Composable
+fun RecordsScreen(
+    records: List<HealthRecord>,
+    onAddClick: () -> Unit,
+    onDelete: (HealthRecord) -> Unit
+) {
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddClick
+            ) {
+                Text("+")
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            WelcomeHeader()
+
+            RecordList(
+                records = records,
+                onDelete = onDelete
+            )
+        }
+    }
+}
+
+@Composable
+fun AddRecordScreen(
+    onSave: (HealthRecord) -> Unit,
+    onCancel: () -> Unit
+) {
+    Scaffold { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Text(
+                text = "Add record",
+                fontSize = 24.sp,
+                modifier = Modifier.padding(16.dp)
+            )
+
+            AddRecordForm(
+                onSave = onSave
+            )
+
+            TextButton(
+                onClick = onCancel,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Text("Cancel")
+            }
+        }
     }
 }
 
