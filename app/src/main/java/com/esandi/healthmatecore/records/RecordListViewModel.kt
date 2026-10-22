@@ -31,4 +31,9 @@ class RecordListViewModel(
             repository.deleteRecord(record)
         }
     }
+    fun updateRecord(record: HealthRecord) {
+        viewModelScope.launch {
+            repository.updateRecord(record)
+        }
+    }
 }

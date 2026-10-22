@@ -85,6 +85,9 @@ class MainActivity : ComponentActivity() {
                             },
                             onDelete = { record ->
                                 viewModel.deleteRecord(record)
+                            },
+                            onEdit = { record ->
+                                navController.navigate("edit/${record.id}")
                             }
                         )
                     }
@@ -100,6 +103,41 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+
+                    composable("edit/{recordId}") { backStackEntry ->
+                        val recordId = backStackEntry.arguments
+                            ?.getString("recordId")
+                            ?.toLongOrNull()
+
+                        val record = records.find { it.id == recordId }
+
+                        if (record != null) {
+                            EditRecordScreen(
+                                record = record,
+                                onSave = { updatedRecord ->
+                                    viewModel.updateRecord(updatedRecord)
+                                    navController.popBackStack()
+                                },
+                                onCancel = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text("Record not found")
+
+                                TextButton(
+                                    onClick = {
+                                        navController.popBackStack()
+                                    }
+                                ) {
+                                    Text("Back")
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -109,12 +147,21 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AddRecordForm(
     onSave: (HealthRecord) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialRecord: HealthRecord? = null
 ) {
-    var stepsText by remember { mutableStateOf("") }
-    var caloriesText by remember { mutableStateOf("") }
-    var waterText by remember { mutableStateOf("") }
-    var sleepText by remember { mutableStateOf("") }
+    var stepsText by remember(initialRecord?.id) {
+        mutableStateOf(numberText(initialRecord?.steps))
+    }
+    var caloriesText by remember(initialRecord?.id) {
+        mutableStateOf(numberText(initialRecord?.calories))
+    }
+    var waterText by remember(initialRecord?.id) {
+        mutableStateOf(numberText(initialRecord?.waterMl))
+    }
+    var sleepText by remember(initialRecord?.id) {
+        mutableStateOf(numberText(initialRecord?.sleepMinutes))
+    }
 
     Column(
         modifier = modifier.padding(16.dp)
@@ -157,23 +204,39 @@ fun AddRecordForm(
 
         Button(
             onClick = {
-                val record = HealthRecord(
-                    date = LocalDate.now().toString(),
-                    time = LocalTime.now().format(
-                        DateTimeFormatter.ofPattern("HH:mm")
-                    ),
-                    steps = stepsText.toIntOrNull() ?: 0,
-                    calories = caloriesText.toIntOrNull() ?: 0,
-                    waterMl = waterText.toIntOrNull() ?: 0,
-                    sleepMinutes = sleepText.toIntOrNull() ?: 0
-                )
+                val steps = stepsText.toIntOrNull() ?: 0
+                val calories = caloriesText.toIntOrNull() ?: 0
+                val water = waterText.toIntOrNull() ?: 0
+                val sleep = sleepText.toIntOrNull() ?: 0
+
+                val record = if (initialRecord != null) {
+                    initialRecord.copy(
+                        steps = steps,
+                        calories = calories,
+                        waterMl = water,
+                        sleepMinutes = sleep
+                    )
+                } else {
+                    HealthRecord(
+                        date = LocalDate.now().toString(),
+                        time = LocalTime.now().format(
+                            DateTimeFormatter.ofPattern("HH:mm")
+                        ),
+                        steps = steps,
+                        calories = calories,
+                        waterMl = water,
+                        sleepMinutes = sleep
+                    )
+                }
 
                 onSave(record)
 
-                stepsText = ""
-                caloriesText = ""
-                waterText = ""
-                sleepText = ""
+                if (initialRecord == null) {
+                    stepsText = ""
+                    caloriesText = ""
+                    waterText = ""
+                    sleepText = ""
+                }
             }
         ) {
             Text("Save")
@@ -181,9 +244,18 @@ fun AddRecordForm(
     }
 }
 
+fun numberText(value: Int?): String {
+    return if (value != null && value > 0) {
+        value.toString()
+    } else {
+        ""
+    }
+}
+
 @Composable
 fun RecordRow(
     record: HealthRecord,
+    onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
     val recordedText = when {
@@ -217,6 +289,11 @@ fun RecordRow(
                 fontSize = 14.sp
             )
         }
+        TextButton(
+            onClick = onEditClick
+        ) {
+            Text("Edit")
+        }
 
         TextButton(
             onClick = onDeleteClick
@@ -230,6 +307,7 @@ fun RecordRow(
 fun RecordList(
     records: List<HealthRecord>,
     onDelete: (HealthRecord) -> Unit,
+    onEdit: (HealthRecord) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var recordToDelete by remember {
@@ -240,6 +318,9 @@ fun RecordList(
         items(records) { record ->
             RecordRow(
                 record = record,
+                onEditClick = {
+                    onEdit(record)
+                },
                 onDeleteClick = {
                     recordToDelete = record
                 }
@@ -333,7 +414,8 @@ fun WelcomeHeader(modifier: Modifier = Modifier) {
 fun RecordsScreen(
     records: List<HealthRecord>,
     onAddClick: () -> Unit,
-    onDelete: (HealthRecord) -> Unit
+    onDelete: (HealthRecord) -> Unit,
+    onEdit: (HealthRecord) -> Unit
 ) {
     Scaffold(
         floatingActionButton = {
@@ -353,7 +435,8 @@ fun RecordsScreen(
 
             RecordList(
                 records = records,
-                onDelete = onDelete
+                onDelete = onDelete,
+                onEdit = onEdit
             )
         }
     }
@@ -389,6 +472,40 @@ fun AddRecordScreen(
         }
     }
 }
+
+@Composable
+fun EditRecordScreen(
+    record: HealthRecord,
+    onSave: (HealthRecord) -> Unit,
+    onCancel: () -> Unit
+) {
+    Scaffold { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Text(
+                text = "Edit record",
+                fontSize = 24.sp,
+                modifier = Modifier.padding(16.dp)
+            )
+
+            AddRecordForm(
+                onSave = onSave,
+                initialRecord = record
+            )
+
+            TextButton(
+                onClick = onCancel,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                Text("Cancel")
+            }
+        }
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
