@@ -24,12 +24,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.esandi.healthmatecore.data.HealthRecord
-import com.esandi.healthmatecore.data.sampleRecords
 import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.esandi.healthmatecore.data.HealthMateDatabase
 import com.esandi.healthmatecore.data.HealthRecordRepository
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.lifecycle.viewmodel.initializer
+import com.esandi.healthmatecore.records.RecordListViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +47,15 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            val viewModel: RecordListViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        RecordListViewModel(repository)
+                    }
+                }
+            )
+
+            val records by viewModel.records.collectAsState()
             HealthMateCoreTheme {
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
@@ -52,7 +65,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         WelcomeHeader()
                         StepCounter()
-                        RecordList(records = sampleRecords())
+                        RecordList(records = records)
                     }
                 }
             }
