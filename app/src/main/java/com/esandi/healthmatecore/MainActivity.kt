@@ -566,16 +566,27 @@ fun RecordsScreen(
                 onClear = onClearDateFilter
             )
 
-            if (records.isEmpty() && selectedDate != null) {
-                Text(
-                    text = "No records on this date",
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .wrapContentHeight(Alignment.CenterVertically)
-                        .padding(16.dp),
-                    textAlign = TextAlign.Center
-                )
+
+            if (records.isEmpty()) {
+                if (selectedDate != null) {
+                    Text(
+                        text = "No records on this date",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                } else {
+                    Text(
+                        text = "No records yet. Tap + to add your first one.",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             } else {
                 RecordList(
                     records = records,
@@ -584,6 +595,7 @@ fun RecordsScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
+
         }
     }
 }
