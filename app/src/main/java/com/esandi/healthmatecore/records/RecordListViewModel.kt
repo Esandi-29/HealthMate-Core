@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.esandi.healthmatecore.data.DailyTotals
+import java.time.LocalDate
 
 class RecordListViewModel(
     private val repository: HealthRecordRepository
@@ -19,6 +21,18 @@ class RecordListViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
+    val todayTotals: StateFlow<DailyTotals> =
+        repository.getTotalsForDate(LocalDate.now().toString())
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = DailyTotals(
+                    steps = 0,
+                    calories = 0,
+                    waterMl = 0,
+                    sleepMinutes = 0
+                )
+            )
 
     fun addRecord(record: HealthRecord) {
         viewModelScope.launch {

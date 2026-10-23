@@ -6,48 +6,51 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.esandi.healthmatecore.data.HealthRecord
-import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import com.esandi.healthmatecore.data.HealthMateDatabase
-import com.esandi.healthmatecore.data.HealthRecordRepository
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
-import com.esandi.healthmatecore.records.RecordListViewModel
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.text.input.KeyboardType
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import androidx.compose.material3.TextButton
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FloatingActionButton
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.esandi.healthmatecore.data.DailyTotals
+import com.esandi.healthmatecore.data.HealthMateDatabase
+import com.esandi.healthmatecore.data.HealthRecord
+import com.esandi.healthmatecore.data.HealthRecordRepository
+import com.esandi.healthmatecore.records.RecordListViewModel
+import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,6 +73,8 @@ class MainActivity : ComponentActivity() {
             )
 
             val records by viewModel.records.collectAsState()
+            val todayTotals by viewModel.todayTotals.collectAsState()
+
             HealthMateCoreTheme {
                 val navController = rememberNavController()
 
@@ -78,6 +83,7 @@ class MainActivity : ComponentActivity() {
                     startDestination = "records"
                 ) {
                     composable("records") {
+
                         RecordsScreen(
                             records = records,
                             onAddClick = {
@@ -88,8 +94,10 @@ class MainActivity : ComponentActivity() {
                             },
                             onEdit = { record ->
                                 navController.navigate("edit/${record.id}")
-                            }
+                            },
+                            totals = todayTotals
                         )
+
                     }
 
                     composable("add") {
@@ -314,7 +322,8 @@ fun RecordList(
         mutableStateOf<HealthRecord?>(null)
     }
 
-    LazyColumn(modifier = modifier) {
+    LazyColumn(
+        modifier = modifier) {
         items(records) { record ->
             RecordRow(
                 record = record,
@@ -415,7 +424,8 @@ fun RecordsScreen(
     records: List<HealthRecord>,
     onAddClick: () -> Unit,
     onDelete: (HealthRecord) -> Unit,
-    onEdit: (HealthRecord) -> Unit
+    onEdit: (HealthRecord) -> Unit,
+    totals: DailyTotals
 ) {
     Scaffold(
         floatingActionButton = {
@@ -433,10 +443,13 @@ fun RecordsScreen(
         ) {
             WelcomeHeader()
 
+            TodaySummary(totals = totals)
+
             RecordList(
                 records = records,
                 onDelete = onDelete,
-                onEdit = onEdit
+                onEdit = onEdit,
+                modifier = Modifier . weight (1f)
             )
         }
     }
@@ -506,6 +519,78 @@ fun EditRecordScreen(
     }
 }
 
+@Composable
+fun StatCard(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Text(
+                text = value,
+                fontSize = 20.sp
+            )
+            Text(
+                text = label,
+                fontSize = 12.sp
+            )
+        }
+    }
+}
+
+
+@Composable
+fun TodaySummary(totals: DailyTotals) {
+    val sleepHours = totals.sleepMinutes / 60
+    val sleepRemainder = totals.sleepMinutes % 60
+
+    Column(
+        modifier = Modifier.padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Today's Summary",
+            fontSize = 20.sp,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            StatCard(
+                value = "%,d".format(totals.steps),
+                label = "Steps",
+                modifier = Modifier.weight(1f)
+            )
+
+            StatCard(
+                value = "%,d".format(totals.calories),
+                label = "Calories",
+                modifier = Modifier.weight(1f)
+            )
+
+            StatCard(
+                value = "${totals.waterMl} ml",
+                label = "Water",
+                modifier = Modifier.weight(1f)
+            )
+
+            StatCard(
+                value = "${sleepHours}h ${sleepRemainder}m",
+                label = "Sleep",
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

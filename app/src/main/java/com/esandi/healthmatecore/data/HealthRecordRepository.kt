@@ -36,4 +36,7 @@ class HealthRecordRepository(
             }
         }
     }
+    fun getTotalsForDate(date: String): Flow<DailyTotals> {
+        return healthRecordDao.getTotalsForDate(date)
+    }
 }
