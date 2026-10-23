@@ -55,9 +55,10 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.ui.text.style.TextAlign
+import com.esandi.healthmatecore.records.RecordValidator
 import java.time.Instant
 import java.time.ZoneOffset
 
@@ -168,6 +169,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
 fun AddRecordForm(
     onSave: (HealthRecord) -> Unit,
@@ -187,51 +189,138 @@ fun AddRecordForm(
         mutableStateOf(numberText(initialRecord?.sleepMinutes))
     }
 
+    var stepsError by remember(initialRecord?.id) {
+        mutableStateOf<String?>(null)
+    }
+    var caloriesError by remember(initialRecord?.id) {
+        mutableStateOf<String?>(null)
+    }
+    var waterError by remember(initialRecord?.id) {
+        mutableStateOf<String?>(null)
+    }
+    var sleepError by remember(initialRecord?.id) {
+        mutableStateOf<String?>(null)
+    }
+    var formError by remember(initialRecord?.id) {
+        mutableStateOf<String?>(null)
+    }
+
     Column(
         modifier = modifier.padding(16.dp)
     ) {
         OutlinedTextField(
             value = stepsText,
-            onValueChange = { stepsText = it },
+            onValueChange = {
+                stepsText = it
+                stepsError = null
+                formError = null
+            },
             label = { Text("Steps") },
+            isError = stepsError != null,
+            supportingText = {
+                stepsError?.let { Text(it) }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number
-            )
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = caloriesText,
-            onValueChange = { caloriesText = it },
+            onValueChange = {
+                caloriesText = it
+                caloriesError = null
+                formError = null
+            },
             label = { Text("Calories burned") },
+            isError = caloriesError != null,
+            supportingText = {
+                caloriesError?.let { Text(it) }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number
-            )
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = waterText,
-            onValueChange = { waterText = it },
+            onValueChange = {
+                waterText = it
+                waterError = null
+                formError = null
+            },
             label = { Text("Water (ml)") },
+            isError = waterError != null,
+            supportingText = {
+                waterError?.let { Text(it) }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number
-            )
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = sleepText,
-            onValueChange = { sleepText = it },
+            onValueChange = {
+                sleepText = it
+                sleepError = null
+                formError = null
+            },
             label = { Text("Sleep (minutes)") },
+            isError = sleepError != null,
+            supportingText = {
+                sleepError?.let { Text(it) }
+            },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number
-            )
+            ),
+            modifier = Modifier.fillMaxWidth()
         )
+
+        formError?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
 
         Button(
             onClick = {
+                stepsError = RecordValidator.validateSteps(stepsText)
+                caloriesError = RecordValidator.validateCalories(caloriesText)
+                waterError = RecordValidator.validateWater(waterText)
+                sleepError = RecordValidator.validateSleep(sleepText)
+
+                val fieldsAreValid =
+                    stepsError == null &&
+                            caloriesError == null &&
+                            waterError == null &&
+                            sleepError == null
+
+                if (!fieldsAreValid) {
+                    formError = null
+                    return@Button
+                }
+
                 val steps = stepsText.toIntOrNull() ?: 0
                 val calories = caloriesText.toIntOrNull() ?: 0
                 val water = waterText.toIntOrNull() ?: 0
                 val sleep = sleepText.toIntOrNull() ?: 0
+
+                formError = RecordValidator.validateAtLeastOne(
+                    steps = steps,
+                    calories = calories,
+                    water = water,
+                    sleep = sleep
+                )
+
+                if (formError != null) {
+                    return@Button
+                }
 
                 val record = if (initialRecord != null) {
                     initialRecord.copy(
@@ -260,6 +349,11 @@ fun AddRecordForm(
                     caloriesText = ""
                     waterText = ""
                     sleepText = ""
+                    stepsError = null
+                    caloriesError = null
+                    waterError = null
+                    sleepError = null
+                    formError = null
                 }
             }
         ) {
@@ -267,6 +361,7 @@ fun AddRecordForm(
         }
     }
 }
+
 
 fun numberText(value: Int?): String {
     return if (value != null && value > 0) {
