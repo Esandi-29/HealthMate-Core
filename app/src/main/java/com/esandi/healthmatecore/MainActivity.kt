@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -51,6 +52,14 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.text.style.TextAlign
+import java.time.Instant
+import java.time.ZoneOffset
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +83,7 @@ class MainActivity : ComponentActivity() {
 
             val records by viewModel.records.collectAsState()
             val todayTotals by viewModel.todayTotals.collectAsState()
+            val dateFilter by viewModel.dateFilter.collectAsState()
 
             HealthMateCoreTheme {
                 val navController = rememberNavController()
@@ -95,9 +105,15 @@ class MainActivity : ComponentActivity() {
                             onEdit = { record ->
                                 navController.navigate("edit/${record.id}")
                             },
-                            totals = todayTotals
+                            totals = todayTotals,
+                            selectedDate = dateFilter,
+                            onDatePicked = { date ->
+                                viewModel.setDateFilter(date)
+                            },
+                            onClearDateFilter = {
+                                viewModel.clearDateFilter()
+                            }
                         )
-
                     }
 
                     composable("add") {
@@ -323,7 +339,8 @@ fun RecordList(
     }
 
     LazyColumn(
-        modifier = modifier) {
+        modifier = modifier
+    ) {
         items(records) { record ->
             RecordRow(
                 record = record,
@@ -425,7 +442,10 @@ fun RecordsScreen(
     onAddClick: () -> Unit,
     onDelete: (HealthRecord) -> Unit,
     onEdit: (HealthRecord) -> Unit,
-    totals: DailyTotals
+    totals: DailyTotals,
+    selectedDate: String?,
+    onDatePicked: (String) -> Unit,
+    onClearDateFilter: () -> Unit,
 ) {
     Scaffold(
         floatingActionButton = {
@@ -445,12 +465,30 @@ fun RecordsScreen(
 
             TodaySummary(totals = totals)
 
-            RecordList(
-                records = records,
-                onDelete = onDelete,
-                onEdit = onEdit,
-                modifier = Modifier . weight (1f)
+            DateFilterBar(
+                selectedDate = selectedDate,
+                onDatePicked = onDatePicked,
+                onClear = onClearDateFilter
             )
+
+            if (records.isEmpty() && selectedDate != null) {
+                Text(
+                    text = "No records on this date",
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .wrapContentHeight(Alignment.CenterVertically)
+                        .padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                RecordList(
+                    records = records,
+                    onDelete = onDelete,
+                    onEdit = onEdit,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
@@ -596,4 +634,73 @@ fun TodaySummary(totals: DailyTotals) {
 @Composable
 fun WelcomeHeaderPreview() {
     WelcomeHeader()
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateFilterBar(
+    selectedDate: String?,
+    onDatePicked: (String) -> Unit,
+    onClear: () -> Unit
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    val pickerState = rememberDatePickerState()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (selectedDate == null) {
+                "All dates"
+            } else {
+                "Showing $selectedDate"
+            },
+            modifier = Modifier.weight(1f)
+        )
+
+        TextButton(onClick = { showPicker = true }) {
+            Text("Pick date")
+        }
+
+        if (selectedDate != null) {
+            TextButton(onClick = onClear) {
+                Text("Clear")
+            }
+        }
+    }
+
+    if (showPicker) {
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pickerState.selectedDateMillis?.let { millis ->
+                            val date = Instant.ofEpochMilli(millis)
+                                .atZone(ZoneOffset.UTC)
+                                .toLocalDate()
+                                .toString()
+
+                            onDatePicked(date)
+                        }
+
+                        showPicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
 }
