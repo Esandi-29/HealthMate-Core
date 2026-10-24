@@ -21,9 +21,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,6 +53,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.esandi.healthmatecore.data.DailyTotals
 import com.esandi.healthmatecore.data.HealthMateDatabase
@@ -64,6 +68,20 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+
+data class BottomTab(
+    val route: String,
+    val label: String,
+    val icon: Int
+)
+
+val bottomTabs = listOf(
+    BottomTab("home", "Home", R.drawable.ic_home),
+    BottomTab("history", "History", R.drawable.ic_history),
+    BottomTab("add", "Add", R.drawable.ic_add),
+    BottomTab("progress", "Progress", R.drawable.ic_progress),
+    BottomTab("profile", "Profile", R.drawable.ic_profile)
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,77 +109,137 @@ class MainActivity : ComponentActivity() {
 
             HealthMateCoreTheme {
                 val navController = rememberNavController()
+                val currentRoute =
+                    navController.currentBackStackEntryAsState().value
+                        ?.destination?.route
+                val showBottomBar = currentRoute in listOf(
+                    "home",
+                    "history",
+                    "progress",
+                    "profile"
+                )
 
-                NavHost(
-                    navController = navController,
-                    startDestination = "records"
-                ) {
-                    composable("records") {
-
-                        RecordsScreen(
-                            records = records,
-                            onAddClick = {
-                                navController.navigate("add")
-                            },
-                            onDelete = { record ->
-                                viewModel.deleteRecord(record)
-                            },
-                            onEdit = { record ->
-                                navController.navigate("edit/${record.id}")
-                            },
-                            totals = todayTotals,
-                            selectedDate = dateFilter,
-                            onDatePicked = { date ->
-                                viewModel.setDateFilter(date)
-                            },
-                            onClearDateFilter = {
-                                viewModel.clearDateFilter()
+                Scaffold(
+                    bottomBar = {
+                        if (showBottomBar) {
+                            NavigationBar {
+                                bottomTabs.forEach { tab ->
+                                    NavigationBarItem(
+                                        selected = currentRoute == tab.route,
+                                        onClick = {
+                                            navController.navigate(tab.route) {
+                                                popUpTo("home") {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        },
+                                        icon = {
+                                            Icon(
+                                                painter = painterResource(id = tab.icon),
+                                                contentDescription = tab.label
+                                            )
+                                        },
+                                        label = {
+                                            Text(tab.label)
+                                        }
+                                    )
+                                }
                             }
-                        )
+                        }
                     }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "home",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("home") {
 
-                    composable("add") {
-                        AddRecordScreen(
-                            onSave = { record ->
-                                viewModel.addRecord(record)
-                                navController.popBackStack()
-                            },
-                            onCancel = {
-                                navController.popBackStack()
-                            }
-                        )
-                    }
+                            RecordsScreen(
+                                records = records,
+                                onDelete = { record ->
+                                    viewModel.deleteRecord(record)
+                                },
+                                onEdit = { record ->
+                                    navController.navigate("edit/${record.id}")
+                                },
+                                totals = todayTotals,
+                                selectedDate = dateFilter,
+                                onDatePicked = { date ->
+                                    viewModel.setDateFilter(date)
+                                },
+                                onClearDateFilter = {
+                                    viewModel.clearDateFilter()
+                                }
+                            )
+                        }
 
-                    composable("edit/{recordId}") { backStackEntry ->
-                        val recordId = backStackEntry.arguments
-                            ?.getString("recordId")
-                            ?.toLongOrNull()
+                        composable("history") {
+                            PlaceholderScreen(
+                                title = "History",
+                                message = "All your past records will appear here."
+                            )
+                        }
 
-                        val record = records.find { it.id == recordId }
+                        composable("progress") {
+                            PlaceholderScreen(
+                                title = "Progress",
+                                message = "Your weekly charts will appear here."
+                            )
+                        }
 
-                        if (record != null) {
-                            EditRecordScreen(
-                                record = record,
-                                onSave = { updatedRecord ->
-                                    viewModel.updateRecord(updatedRecord)
+                        composable("profile") {
+                            PlaceholderScreen(
+                                title = "Profile",
+                                message = "Your goals and settings will appear here."
+                            )
+                        }
+
+                        composable("add") {
+                            AddRecordScreen(
+                                onSave = { record ->
+                                    viewModel.addRecord(record)
                                     navController.popBackStack()
                                 },
                                 onCancel = {
                                     navController.popBackStack()
                                 }
                             )
-                        } else {
-                            Column(
-                                modifier = Modifier.padding(16.dp)
-                            ) {
-                                Text("Record not found")
+                        }
 
-                                TextButton(
-                                    onClick = {
+                        composable("edit/{recordId}") { backStackEntry ->
+                            val recordId = backStackEntry.arguments
+                                ?.getString("recordId")
+                                ?.toLongOrNull()
+
+                            val record = records.find { it.id == recordId }
+
+                            if (record != null) {
+                                EditRecordScreen(
+                                    record = record,
+                                    onSave = { updatedRecord ->
+                                        viewModel.updateRecord(updatedRecord)
+                                        navController.popBackStack()
+                                    },
+                                    onCancel = {
                                         navController.popBackStack()
                                     }
+                                )
+                            } else {
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
                                 ) {
-                                    Text("Back")
+                                    Text("Record not found")
+
+                                    TextButton(
+                                        onClick = {
+                                            navController.popBackStack()
+                                        }
+                                    ) {
+                                        Text("Back")
+                                    }
                                 }
                             }
                         }
@@ -561,7 +639,6 @@ fun WelcomeHeader(modifier: Modifier = Modifier) {
 @Composable
 fun RecordsScreen(
     records: List<HealthRecord>,
-    onAddClick: () -> Unit,
     onDelete: (HealthRecord) -> Unit,
     onEdit: (HealthRecord) -> Unit,
     totals: DailyTotals,
@@ -569,61 +646,49 @@ fun RecordsScreen(
     onDatePicked: (String) -> Unit,
     onClearDateFilter: () -> Unit,
 ) {
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddClick
-            ) {
-                Text("+")
-            }
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            WelcomeHeader()
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        WelcomeHeader()
 
-            TodaySummary(totals = totals)
+        TodaySummary(totals = totals)
 
-            DateFilterBar(
-                selectedDate = selectedDate,
-                onDatePicked = onDatePicked,
-                onClear = onClearDateFilter
-            )
+        DateFilterBar(
+            selectedDate = selectedDate,
+            onDatePicked = onDatePicked,
+            onClear = onClearDateFilter
+        )
 
 
-            if (records.isEmpty()) {
-                if (selectedDate != null) {
-                    Text(
-                        text = "No records on this date",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                } else {
-                    Text(
-                        text = "No records yet. Tap + to add your first one.",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
+        if (records.isEmpty()) {
+            if (selectedDate != null) {
+                Text(
+                    text = "No records on this date",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             } else {
-                RecordList(
-                    records = records,
-                    onDelete = onDelete,
-                    onEdit = onEdit,
-                    modifier = Modifier.weight(1f)
+                Text(
+                    text = "No records yet. Tap + to add your first one.",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
-
+        } else {
+            RecordList(
+                records = records,
+                onDelete = onDelete,
+                onEdit = onEdit,
+                modifier = Modifier.weight(1f)
+            )
         }
+
     }
 }
 
@@ -632,28 +697,24 @@ fun AddRecordScreen(
     onSave: (HealthRecord) -> Unit,
     onCancel: () -> Unit
 ) {
-    Scaffold { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Text(
+            text = "Add record",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        AddRecordForm(
+            onSave = onSave
+        )
+
+        TextButton(
+            onClick = onCancel,
+            modifier = Modifier.padding(horizontal = 16.dp)
         ) {
-            Text(
-                text = "Add record",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-
-            AddRecordForm(
-                onSave = onSave
-            )
-
-            TextButton(
-                onClick = onCancel,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Text("Cancel")
-            }
+            Text("Cancel")
         }
     }
 }
@@ -664,29 +725,25 @@ fun EditRecordScreen(
     onSave: (HealthRecord) -> Unit,
     onCancel: () -> Unit
 ) {
-    Scaffold { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Text(
+            text = "Edit record",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        AddRecordForm(
+            onSave = onSave,
+            initialRecord = record
+        )
+
+        TextButton(
+            onClick = onCancel,
+            modifier = Modifier.padding(horizontal = 16.dp)
         ) {
-            Text(
-                text = "Edit record",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(16.dp)
-            )
-
-            AddRecordForm(
-                onSave = onSave,
-                initialRecord = record
-            )
-
-            TextButton(
-                onClick = onCancel,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Text("Cancel")
-            }
+            Text("Cancel")
         }
     }
 }
@@ -836,5 +893,28 @@ fun DateFilterBar(
         ) {
             DatePicker(state = pickerState)
         }
+    }
+}
+
+@Composable
+fun PlaceholderScreen(
+    title: String,
+    message: String
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineLarge
+        )
+
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
