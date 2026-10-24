@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Signing keys and release builds - never commit
+*.jks
+*.keystore
+/app/release/
+*.apk
+*.aab
