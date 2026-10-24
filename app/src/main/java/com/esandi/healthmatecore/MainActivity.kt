@@ -400,12 +400,12 @@ fun RecordRow(
         ) {
             Text(
                 text = "${record.date} • ${record.time}",
-                fontSize = 16.sp
+                style = MaterialTheme.typography.titleMedium
             )
 
             Text(
                 text = recordedText ?: "No health data recorded",
-                fontSize = 14.sp
+                style = MaterialTheme.typography.bodyMedium
             )
         }
         TextButton(
@@ -521,12 +521,12 @@ fun WelcomeHeader(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "HealthMate",
-            fontSize = 32.sp
+            style = MaterialTheme.typography.headlineLarge
         )
 
         Text(
             text = "Welcome back, Esandi",
-            fontSize = 18.sp
+            style = MaterialTheme.typography.bodyLarge
         )
     }
 }
@@ -613,7 +613,7 @@ fun AddRecordScreen(
         ) {
             Text(
                 text = "Add record",
-                fontSize = 24.sp,
+                style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(16.dp)
             )
 
@@ -645,7 +645,7 @@ fun EditRecordScreen(
         ) {
             Text(
                 text = "Edit record",
-                fontSize = 24.sp,
+                style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(16.dp)
             )
 
@@ -678,11 +678,11 @@ fun StatCard(
         ) {
             Text(
                 text = value,
-                fontSize = 20.sp
+                style = MaterialTheme.typography.titleLarge
             )
             Text(
                 text = label,
-                fontSize = 12.sp
+                style = MaterialTheme.typography.bodySmall
             )
         }
     }
@@ -700,7 +700,7 @@ fun TodaySummary(totals: DailyTotals) {
     ) {
         Text(
             text = "Today's Summary",
-            fontSize = 20.sp,
+            style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
