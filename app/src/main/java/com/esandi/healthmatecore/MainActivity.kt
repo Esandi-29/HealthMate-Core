@@ -4,24 +4,31 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -31,7 +38,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,20 +56,14 @@ import com.esandi.healthmatecore.data.HealthMateDatabase
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.data.HealthRecordRepository
 import com.esandi.healthmatecore.records.RecordListViewModel
+import com.esandi.healthmatecore.records.RecordValidator
 import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.ui.text.style.TextAlign
-import com.esandi.healthmatecore.records.RecordValidator
-import java.time.Instant
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -404,7 +407,7 @@ fun RecordRow(
             )
 
             Text(
-                text = recordedText ?: "No health data recorded",
+                text = recordedText,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -436,16 +439,40 @@ fun RecordList(
     LazyColumn(
         modifier = modifier
     ) {
-        items(records) { record ->
-            RecordRow(
-                record = record,
-                onEditClick = {
-                    onEdit(record)
-                },
-                onDeleteClick = {
-                    recordToDelete = record
-                }
+        itemsIndexed(records) { index, record ->
+            val isFirst = index == 0
+            val isLast = index == records.lastIndex
+
+            val shape = RoundedCornerShape(
+                topStart = if (isFirst) 16.dp else 0.dp,
+                topEnd = if (isFirst) 16.dp else 0.dp,
+                bottomStart = if (isLast) 16.dp else 0.dp,
+                bottomEnd = if (isLast) 16.dp else 0.dp
             )
+
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                RecordRow(
+                    record = record,
+                    onEditClick = {
+                        onEdit(record)
+                    },
+                    onDeleteClick = {
+                        recordToDelete = record
+                    }
+                )
+
+                if (!isLast) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 16.dp)
+                    )
+                }
+            }
         }
     }
 
