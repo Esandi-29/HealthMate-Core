@@ -6,13 +6,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -26,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -124,27 +128,56 @@ class MainActivity : ComponentActivity() {
                         if (showBottomBar) {
                             NavigationBar {
                                 bottomTabs.forEach { tab ->
-                                    NavigationBarItem(
-                                        selected = currentRoute == tab.route,
-                                        onClick = {
-                                            navController.navigate(tab.route) {
-                                                popUpTo("home") {
-                                                    saveState = true
+                                    if (tab.route == "add") {
+                                        NavigationBarItem(
+                                            selected = false,
+                                            onClick = {
+                                                navController.navigate("add")
+                                            },
+                                            icon = {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(48.dp)
+                                                        .clip(CircleShape)
+                                                        .background(MaterialTheme.colorScheme.primary),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(id = tab.icon),
+                                                        contentDescription = tab.label,
+                                                        tint = MaterialTheme.colorScheme.onPrimary
+                                                    )
                                                 }
-                                                launchSingleTop = true
-                                                restoreState = true
                                             }
-                                        },
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = tab.icon),
-                                                contentDescription = tab.label
+                                        )
+                                    } else {
+                                        NavigationBarItem(
+                                            selected = currentRoute == tab.route,
+                                            onClick = {
+                                                navController.navigate(tab.route) {
+                                                    popUpTo("home") {
+                                                        saveState = true
+                                                    }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+                                            },
+                                            icon = {
+                                                Icon(
+                                                    painter = painterResource(id = tab.icon),
+                                                    contentDescription = tab.label
+                                                )
+                                            },
+                                            label = {
+                                                Text(tab.label)
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                indicatorColor = MaterialTheme.colorScheme.primaryContainer
                                             )
-                                        },
-                                        label = {
-                                            Text(tab.label)
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
                             }
                         }
