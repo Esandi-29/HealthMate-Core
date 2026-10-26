@@ -85,6 +85,12 @@ import java.time.DayOfWeek
 import java.time.temporal.TemporalAdjusters
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.runtime.LaunchedEffect
 
 data class BottomTab(
     val route: String,
@@ -231,6 +237,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onDelete = { record ->
                                     viewModel.deleteRecord(record)
+                                },
+                                onOpen = { record ->
+                                    navController.navigate("details/${record.id}")
                                 }
                             )
                         }
@@ -291,6 +300,35 @@ class MainActivity : ComponentActivity() {
                                         }
                                     ) {
                                         Text("Back")
+                                    }
+                                }
+                            }
+                        }
+                        composable("details/{recordId}") { entry ->
+                            val recordId = entry.arguments
+                                ?.getString("recordId")
+                                ?.toLongOrNull()
+
+                            val record = records.firstOrNull { it.id == recordId }
+
+                            if (record != null) {
+                                RecordDetailsScreen(
+                                    record = record,
+                                    onBack = {
+                                        navController.popBackStack()
+                                    },
+                                    onEdit = {
+                                        navController.navigate("edit/${record.id}")
+                                    },
+                                    onDelete = {
+                                        viewModel.deleteRecord(record)
+                                        navController.popBackStack()
+                                    }
+                                )
+                            } else {
+                                LaunchedEffect(Unit) {
+                                    if (navController.currentBackStackEntry == entry) {
+                                        navController.popBackStack()
                                     }
                                 }
                             }
@@ -507,6 +545,7 @@ fun numberText(value: Int?): String {
 @Composable
 fun RecordRow(
     record: HealthRecord,
+    onClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -522,10 +561,10 @@ fun RecordRow(
     }
 
     Row(
-        modifier = Modifier.padding(
-            horizontal = 16.dp,
-            vertical = 8.dp
-        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
@@ -558,6 +597,7 @@ fun RecordRow(
 @Composable
 fun RecordList(
     records: List<HealthRecord>,
+    onOpen: (HealthRecord) -> Unit,
     onDelete: (HealthRecord) -> Unit,
     onEdit: (HealthRecord) -> Unit,
     modifier: Modifier = Modifier
@@ -589,6 +629,7 @@ fun RecordList(
             ) {
                 RecordRow(
                     record = record,
+                    onClick = { onOpen(record) },
                     onEditClick = {
                         onEdit(record)
                     },
@@ -1216,7 +1257,8 @@ fun HistoryScreen(
     onDatePicked: (String) -> Unit,
     onClearDateFilter: () -> Unit,
     onEdit: (HealthRecord) -> Unit,
-    onDelete: (HealthRecord) -> Unit
+    onDelete: (HealthRecord) -> Unit,
+    onOpen: (HealthRecord) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -1257,6 +1299,7 @@ fun HistoryScreen(
         } else {
             RecordList(
                 records = records,
+                onOpen = onOpen,
                 onDelete = onDelete,
                 onEdit = onEdit,
                 modifier = Modifier.weight(1f)
@@ -1265,3 +1308,197 @@ fun HistoryScreen(
     }
 }
 
+@Composable
+fun DetailLine(
+    icon: Int,
+    color: Color,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = null,
+            tint = color
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f)
+        )
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium
+        )
+    }
+}
+
+@Composable
+fun RecordDetailsScreen(
+    record: HealthRecord,
+    onBack: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    var showDeleteConfirmation by remember {
+        mutableStateOf(false)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(vertical = 8.dp)
+    ) {
+        TextButton(
+            onClick = onBack,
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            Text("Back")
+        }
+
+        Text(
+            text = "${record.date} • ${record.time}",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            if (record.steps > 0) {
+                DetailLine(
+                    icon = R.drawable.ic_progress,
+                    color = MaterialTheme.colorScheme.primary,
+                    label = "Steps",
+                    value = "%,d".format(record.steps)
+                )
+            }
+
+            if (record.calories > 0) {
+                DetailLine(
+                    icon = R.drawable.ic_calories,
+                    color = Coral,
+                    label = "Calories",
+                    value = "%,d".format(record.calories)
+                )
+            }
+
+            if (record.waterMl > 0) {
+                DetailLine(
+                    icon = R.drawable.ic_water,
+                    color = MaterialTheme.colorScheme.primary,
+                    label = "Water",
+                    value = "${record.waterMl} ml"
+                )
+            }
+
+            if (record.sleepMinutes > 0) {
+                val hours = record.sleepMinutes / 60
+                val minutes = record.sleepMinutes % 60
+
+                DetailLine(
+                    icon = R.drawable.ic_sleep,
+                    color = MaterialTheme.colorScheme.secondary,
+                    label = "Sleep",
+                    value = "${hours}h ${minutes}m"
+                )
+            }
+        }
+
+        if (!record.note.isNullOrBlank()) {
+            Text(
+                text = "Note",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 12.dp,
+                    bottom = 4.dp
+                )
+            )
+
+            Text(
+                text = record.note.orEmpty(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onEdit,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("Edit")
+            }
+
+            Button(
+                onClick = {
+                    showDeleteConfirmation = true
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("Delete")
+            }
+        }
+    }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteConfirmation = false
+            },
+            title = {
+                Text("Delete record?")
+            },
+            text = {
+                Text("This record will be permanently deleted. This action cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        onDelete()
+                    }
+                ) {
+                    Text(
+                        "Delete",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
