@@ -1,4 +1,3 @@
-
 package com.esandi.healthmatecore.ui.theme
 
 import android.os.Build
@@ -22,6 +21,7 @@ private val LightColorScheme = lightColorScheme(
     onBackground = Color(0xFF1C1C1E),
     surface = White,
     onSurface = Color(0xFF1C1C1E),
+    surfaceVariant = Color(0xFFE5E5EA),
 
     primaryContainer = BlueTintLight,
     onPrimaryContainer = StrongBlue,
@@ -47,6 +47,7 @@ private val DarkColorScheme = darkColorScheme(
     onBackground = White,
     surface = DarkCard,
     onSurface = White,
+    surfaceVariant = Color(0xFF2C2C2E),
 
     primaryContainer = BlueTintDark,
     onPrimaryContainer = BrightBlue,
@@ -56,6 +57,7 @@ private val DarkColorScheme = darkColorScheme(
     surfaceContainer = DarkCard,
     surfaceContainerHigh = DarkCard,
     surfaceContainerHighest = DarkCard
+
 )
 
 

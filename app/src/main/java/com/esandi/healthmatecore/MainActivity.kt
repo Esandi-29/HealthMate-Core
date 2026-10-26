@@ -72,6 +72,9 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 data class BottomTab(
     val route: String,
@@ -821,6 +824,18 @@ fun TodaySummary(totals: DailyTotals) {
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            StepsRing(
+                steps = totals.steps,
+                goal = 8000
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -951,3 +966,67 @@ fun PlaceholderScreen(
         )
     }
 }
+
+
+@Composable
+fun StepsRing(
+    steps: Int,
+    goal: Int
+) {
+    val progress = if (goal > 0) {
+        (steps.toFloat() / goal).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val ringColor = MaterialTheme.colorScheme.primary
+
+    Box(
+        modifier = Modifier.size(170.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val stroke = Stroke(
+                width = 14.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                style = stroke
+            )
+
+            if (progress > 0f) {
+                drawArc(
+                    color = ringColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * progress,
+                    useCenter = false,
+                    style = stroke
+                )
+            }
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "%,d".format(steps),
+                style = MaterialTheme.typography.headlineLarge
+            )
+
+            Text(
+                text = "of %,d steps".format(goal),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
