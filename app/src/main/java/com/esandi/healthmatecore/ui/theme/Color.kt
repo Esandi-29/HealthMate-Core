@@ -20,3 +20,5 @@ val DarkCard = Color(0xFF1C1C1E)
 val BlueTintLight = Color(0xFFE6EFFA)
 val BlueTintDark = Color(0xFF16213D)
 
+val Coral = Color(0xFFF2545B)
+

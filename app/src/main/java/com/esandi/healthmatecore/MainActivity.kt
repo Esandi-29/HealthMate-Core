@@ -75,6 +75,8 @@ import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
+import com.esandi.healthmatecore.ui.theme.Coral
 
 data class BottomTab(
     val route: String,
@@ -784,30 +786,6 @@ fun EditRecordScreen(
     }
 }
 
-@Composable
-fun StatCard(
-    value: String,
-    label: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
 
 @Composable
 fun TodaySummary(totals: DailyTotals) {
@@ -836,36 +814,38 @@ fun TodaySummary(totals: DailyTotals) {
             )
         }
 
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            StatCard(
-                value = "%,d".format(totals.steps),
-                label = "Steps",
-                modifier = Modifier.weight(1f)
-            )
-
-            StatCard(
+            MetricTile(
                 value = "%,d".format(totals.calories),
                 label = "Calories",
+                icon = R.drawable.ic_calories,
+                color = Coral,
                 modifier = Modifier.weight(1f)
             )
 
-            StatCard(
+            MetricTile(
                 value = "${totals.waterMl} ml",
                 label = "Water",
+                icon = R.drawable.ic_water,
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f)
             )
 
-            StatCard(
+            MetricTile(
                 value = "${sleepHours}h ${sleepRemainder}m",
                 label = "Sleep",
+                icon = R.drawable.ic_sleep,
+                color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f)
             )
         }
+
     }
 }
 
@@ -1027,6 +1007,44 @@ fun StepsRing(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+
+@Composable
+fun MetricTile(
+    value: String,
+    label: String,
+    icon: Int,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(color.copy(alpha = 0.12f))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            color = color,
+            maxLines = 1
+        )
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
