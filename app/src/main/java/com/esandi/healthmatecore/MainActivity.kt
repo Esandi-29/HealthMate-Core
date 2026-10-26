@@ -91,6 +91,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
 
 data class BottomTab(
     val route: String,
@@ -133,6 +139,25 @@ class MainActivity : ComponentActivity() {
 
             HealthMateCoreTheme {
                 val navController = rememberNavController()
+                val snackbarHostState = remember { SnackbarHostState() }
+                val scope = rememberCoroutineScope()
+
+                fun deleteWithUndo(record: HealthRecord) {
+                    viewModel.deleteRecord(record)
+
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = "Record deleted",
+                            actionLabel = "Undo",
+                            duration = SnackbarDuration.Short
+                        )
+
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.addRecord(record)
+                        }
+                    }
+                }
+
                 val currentRoute =
                     navController.currentBackStackEntryAsState().value
                         ?.destination?.route
@@ -142,8 +167,20 @@ class MainActivity : ComponentActivity() {
                     "progress",
                     "profile"
                 )
-
                 Scaffold(
+                    snackbarHost = {
+                        SnackbarHost(
+                            hostState = snackbarHostState
+                        ) { data ->
+                            Snackbar(
+                                snackbarData = data,
+                                shape = RoundedCornerShape(16.dp),
+                                containerColor = MaterialTheme.colorScheme.inverseSurface,
+                                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                                actionColor = MaterialTheme.colorScheme.inversePrimary
+                            )
+                        }
+                    },
                     bottomBar = {
                         if (showBottomBar) {
                             NavigationBar {
@@ -236,7 +273,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("edit/${record.id}")
                                 },
                                 onDelete = { record ->
-                                    viewModel.deleteRecord(record)
+                                    deleteWithUndo(record)
                                 },
                                 onOpen = { record ->
                                     navController.navigate("details/${record.id}")
@@ -262,6 +299,11 @@ class MainActivity : ComponentActivity() {
                             AddRecordScreen(
                                 onSave = { record ->
                                     viewModel.addRecord(record)
+
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Record added")
+                                    }
+
                                     navController.popBackStack()
                                 },
                                 onCancel = {
@@ -282,6 +324,11 @@ class MainActivity : ComponentActivity() {
                                     record = record,
                                     onSave = { updatedRecord ->
                                         viewModel.updateRecord(updatedRecord)
+
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Record updated")
+                                        }
+
                                         navController.popBackStack()
                                     },
                                     onCancel = {
@@ -321,7 +368,7 @@ class MainActivity : ComponentActivity() {
                                         navController.navigate("edit/${record.id}")
                                     },
                                     onDelete = {
-                                        viewModel.deleteRecord(record)
+                                        deleteWithUndo(record)
                                         navController.popBackStack()
                                     }
                                 )
@@ -1475,7 +1522,7 @@ fun RecordDetailsScreen(
                 Text("Delete record?")
             },
             text = {
-                Text("This record will be permanently deleted. This action cannot be undone.")
+                Text("You can undo this right after.")
             },
             confirmButton = {
                 TextButton(
