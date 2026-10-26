@@ -77,6 +77,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Color
 import com.esandi.healthmatecore.ui.theme.Coral
+import androidx.compose.foundation.clickable
+import java.time.DayOfWeek
+import java.time.temporal.TemporalAdjusters
 
 data class BottomTab(
     val route: String,
@@ -689,6 +692,11 @@ fun RecordsScreen(
     ) {
         WelcomeHeader()
 
+        WeekStrip(
+            records = records,
+            onDayClick = onDatePicked
+        )
+
         TodaySummary(totals = totals)
 
         DateFilterBar(
@@ -819,7 +827,6 @@ fun TodaySummary(totals: DailyTotals) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             MetricTile(
                 value = "%,d".format(totals.calories),
@@ -1045,6 +1052,87 @@ fun MetricTile(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+fun WeekStrip(
+    records: List<HealthRecord>,
+    onDayClick: (String) -> Unit
+) {
+    val today = LocalDate.now()
+    val monday = today.with(
+        TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
+    )
+
+    val weekDays = (0..6).map { monday.plusDays(it.toLong()) }
+    val datesWithRecords = records.map { it.date }.toSet()
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        weekDays.forEach { date ->
+            val isToday = date == today
+            val hasRecords = date.toString() in datesWithRecords
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable {
+                        onDayClick(date.toString())
+                    }
+                    .padding(vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = date.dayOfWeek.name.take(1),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isToday) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                Color.Transparent
+                            }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = date.dayOfMonth.toString(),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (isToday) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (hasRecords) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                Color.Transparent
+                            }
+                        )
+                )
+            }
+        }
     }
 }
 
