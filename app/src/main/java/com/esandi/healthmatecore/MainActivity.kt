@@ -84,6 +84,7 @@ import androidx.compose.foundation.verticalScroll
 import java.time.DayOfWeek
 import java.time.temporal.TemporalAdjusters
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 data class BottomTab(
     val route: String,
@@ -101,6 +102,7 @@ val bottomTabs = listOf(
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val database = HealthMateDatabase.getDatabase(this)
