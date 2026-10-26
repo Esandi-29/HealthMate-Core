@@ -78,8 +78,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Color
 import com.esandi.healthmatecore.ui.theme.Coral
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
 import java.time.DayOfWeek
 import java.time.temporal.TemporalAdjusters
+import androidx.compose.material3.LinearProgressIndicator
 
 data class BottomTab(
     val route: String,
@@ -699,6 +701,8 @@ fun RecordsScreen(
 
         TodaySummary(totals = totals)
 
+        LatestRecords(records = records)
+
         DateFilterBar(
             selectedDate = selectedDate,
             onDatePicked = onDatePicked,
@@ -827,6 +831,7 @@ fun TodaySummary(totals: DailyTotals) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             MetricTile(
                 value = "%,d".format(totals.calories),
@@ -852,6 +857,10 @@ fun TodaySummary(totals: DailyTotals) {
                 modifier = Modifier.weight(1f)
             )
         }
+        WaterGoalBar(
+            waterMl = totals.waterMl,
+            goal = 2000
+        )
 
     }
 }
@@ -1132,6 +1141,98 @@ fun WeekStrip(
                         )
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun WaterGoalBar(
+    waterMl: Int,
+    goal: Int
+) {
+    val progress = if (goal > 0) {
+        (waterMl.toFloat() / goal).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Water: ${waterMl.coerceAtLeast(0)} of %,d ml".format(goal),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            drawStopIndicator = {}
+        )
+    }
+}
+
+@Composable
+fun LatestRecords(records: List<HealthRecord>) {
+    val lastSteps = records.firstOrNull { it.steps > 0 }
+    val lastCalories = records.firstOrNull { it.calories > 0 }
+    val lastWater = records.firstOrNull { it.waterMl > 0 }
+    val lastSleep = records.firstOrNull { it.sleepMinutes > 0 }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "Latest",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        lastSteps?.let { record ->
+            Text(
+                text = "Last steps: %,d on ${record.date}".format(record.steps),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        lastCalories?.let { record ->
+            Text(
+                text = "Last calories: %,d on ${record.date}".format(record.calories),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        lastWater?.let { record ->
+            Text(
+                text = "Last water: ${record.waterMl} ml on ${record.date}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        lastSleep?.let { record ->
+            val hours = record.sleepMinutes / 60
+            val minutes = record.sleepMinutes % 60
+
+            Text(
+                text = "Last sleep: ${hours}h ${minutes}m on ${record.date}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
