@@ -79,6 +79,8 @@ import androidx.compose.ui.graphics.Color
 import com.esandi.healthmatecore.ui.theme.Coral
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import java.time.DayOfWeek
 import java.time.temporal.TemporalAdjusters
 import androidx.compose.material3.LinearProgressIndicator
@@ -199,30 +201,35 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("home") {
-
                             RecordsScreen(
                                 records = records,
-                                onDelete = { record ->
-                                    viewModel.deleteRecord(record)
-                                },
-                                onEdit = { record ->
-                                    navController.navigate("edit/${record.id}")
-                                },
                                 totals = todayTotals,
+                                onDatePicked = { date ->
+                                    viewModel.setDateFilter(date)
+                                    navController.navigate("history") {
+                                        popUpTo("home") { saveState = true }
+                                        launchSingleTop = true
+                                    }
+                                }
+                            )
+                        }
+
+                        composable("history") {
+                            HistoryScreen(
+                                records = records,
                                 selectedDate = dateFilter,
                                 onDatePicked = { date ->
                                     viewModel.setDateFilter(date)
                                 },
                                 onClearDateFilter = {
                                     viewModel.clearDateFilter()
+                                },
+                                onEdit = { record ->
+                                    navController.navigate("edit/${record.id}")
+                                },
+                                onDelete = { record ->
+                                    viewModel.deleteRecord(record)
                                 }
-                            )
-                        }
-
-                        composable("history") {
-                            PlaceholderScreen(
-                                title = "History",
-                                message = "All your past records will appear here."
                             )
                         }
 
@@ -682,15 +689,13 @@ fun WelcomeHeader(modifier: Modifier = Modifier) {
 @Composable
 fun RecordsScreen(
     records: List<HealthRecord>,
-    onDelete: (HealthRecord) -> Unit,
-    onEdit: (HealthRecord) -> Unit,
     totals: DailyTotals,
-    selectedDate: String?,
     onDatePicked: (String) -> Unit,
-    onClearDateFilter: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
         WelcomeHeader()
 
@@ -703,41 +708,6 @@ fun RecordsScreen(
 
         LatestRecords(records = records)
 
-        DateFilterBar(
-            selectedDate = selectedDate,
-            onDatePicked = onDatePicked,
-            onClear = onClearDateFilter
-        )
-
-
-        if (records.isEmpty()) {
-            if (selectedDate != null) {
-                Text(
-                    text = "No records on this date",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            } else {
-                Text(
-                    text = "No records yet. Tap + to add your first one.",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        } else {
-            RecordList(
-                records = records,
-                onDelete = onDelete,
-                onEdit = onEdit,
-                modifier = Modifier.weight(1f)
-            )
-        }
 
     }
 }
@@ -1232,6 +1202,62 @@ fun LatestRecords(records: List<HealthRecord>) {
                 text = "Last sleep: ${hours}h ${minutes}m on ${record.date}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun HistoryScreen(
+    records: List<HealthRecord>,
+    selectedDate: String?,
+    onDatePicked: (String) -> Unit,
+    onClearDateFilter: () -> Unit,
+    onEdit: (HealthRecord) -> Unit,
+    onDelete: (HealthRecord) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Text(
+            text = "History",
+            style = MaterialTheme.typography.headlineLarge,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        DateFilterBar(
+            selectedDate = selectedDate,
+            onDatePicked = onDatePicked,
+            onClear = onClearDateFilter
+        )
+
+
+        if (records.isEmpty()) {
+            if (selectedDate != null) {
+                Text(
+                    text = "No records on this date",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            } else {
+                Text(
+                    text = "No records yet. Tap + to add your first one.",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        } else {
+            RecordList(
+                records = records,
+                onDelete = onDelete,
+                onEdit = onEdit,
+                modifier = Modifier.weight(1f)
             )
         }
     }
