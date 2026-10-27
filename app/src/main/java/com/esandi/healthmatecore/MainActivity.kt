@@ -104,12 +104,22 @@ import com.esandi.healthmatecore.records.DateRange
 import com.esandi.healthmatecore.records.MetricFilter
 import com.esandi.healthmatecore.records.dayLabel
 import com.esandi.healthmatecore.records.filterRecords
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 
 data class BottomTab(
     val route: String,
     val label: String,
     val icon: Int
 )
+
+enum class RecordTab(val label: String) {
+    STEPS("Steps"),
+    CALORIES("Calories"),
+    WATER("Water"),
+    SLEEP("Sleep")
+}
 
 val bottomTabs = listOf(
     BottomTab("home", "Home", R.drawable.ic_home),
@@ -433,80 +443,119 @@ fun AddRecordForm(
         mutableStateOf<String?>(null)
     }
 
+    var selectedTab by remember(initialRecord?.id) {
+        mutableStateOf(
+            when {
+                (initialRecord?.calories ?: 0) > 0 -> RecordTab.CALORIES
+                (initialRecord?.waterMl ?: 0) > 0 -> RecordTab.WATER
+                (initialRecord?.sleepMinutes ?: 0) > 0 -> RecordTab.SLEEP
+                else -> RecordTab.STEPS
+            }
+        )
+    }
+
     Column(
         modifier = modifier.padding(16.dp)
     ) {
-        OutlinedTextField(
-            value = stepsText,
-            onValueChange = {
-                stepsText = it
-                stepsError = null
-                formError = null
-            },
-            label = { Text("Steps") },
-            isError = stepsError != null,
-            supportingText = {
-                stepsError?.let { Text(it) }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number
-            ),
+        SingleChoiceSegmentedButtonRow(
             modifier = Modifier.fillMaxWidth()
-        )
+        ) {
+            RecordTab.entries.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = selectedTab == option,
+                    onClick = { selectedTab = option },
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = RecordTab.entries.size
+                    )
+                ) {
+                    Text(option.label)
+                }
+            }
+        }
 
-        OutlinedTextField(
-            value = caloriesText,
-            onValueChange = {
-                caloriesText = it
-                caloriesError = null
-                formError = null
-            },
-            label = { Text("Calories burned") },
-            isError = caloriesError != null,
-            supportingText = {
-                caloriesError?.let { Text(it) }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Spacer(Modifier.height(16.dp))
+        when (selectedTab) {
+            RecordTab.STEPS -> {
+                OutlinedTextField(
+                    value = stepsText,
+                    onValueChange = {
+                        stepsText = it
+                        stepsError = null
+                        formError = null
+                    },
+                    label = { Text("Steps") },
+                    isError = stepsError != null,
+                    supportingText = {
+                        stepsError?.let { Text(it) }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-        OutlinedTextField(
-            value = waterText,
-            onValueChange = {
-                waterText = it
-                waterError = null
-                formError = null
-            },
-            label = { Text("Water (ml)") },
-            isError = waterError != null,
-            supportingText = {
-                waterError?.let { Text(it) }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
+            RecordTab.CALORIES -> {
+                OutlinedTextField(
+                    value = caloriesText,
+                    onValueChange = {
+                        caloriesText = it
+                        caloriesError = null
+                        formError = null
+                    },
+                    label = { Text("Calories burned") },
+                    isError = caloriesError != null,
+                    supportingText = {
+                        caloriesError?.let { Text(it) }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-        OutlinedTextField(
-            value = sleepText,
-            onValueChange = {
-                sleepText = it
-                sleepError = null
-                formError = null
-            },
-            label = { Text("Sleep (minutes)") },
-            isError = sleepError != null,
-            supportingText = {
-                sleepError?.let { Text(it) }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
+            RecordTab.WATER -> {
+                OutlinedTextField(
+                    value = waterText,
+                    onValueChange = {
+                        waterText = it
+                        waterError = null
+                        formError = null
+                    },
+                    label = { Text("Water (ml)") },
+                    isError = waterError != null,
+                    supportingText = {
+                        waterError?.let { Text(it) }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            RecordTab.SLEEP -> {
+                OutlinedTextField(
+                    value = sleepText,
+                    onValueChange = {
+                        sleepText = it
+                        sleepError = null
+                        formError = null
+                    },
+                    label = { Text("Sleep (minutes)") },
+                    isError = sleepError != null,
+                    supportingText = {
+                        sleepError?.let { Text(it) }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
 
         formError?.let {
             Text(
@@ -530,6 +579,12 @@ fun AddRecordForm(
                             sleepError == null
 
                 if (!fieldsAreValid) {
+                    selectedTab = when {
+                        stepsError != null -> RecordTab.STEPS
+                        caloriesError != null -> RecordTab.CALORIES
+                        waterError != null -> RecordTab.WATER
+                        else -> RecordTab.SLEEP
+                    }
                     formError = null
                     return@Button
                 }
@@ -606,13 +661,28 @@ fun RecordRow(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
-    val recordedText = when {
-        record.steps > 0 -> "${record.steps} steps"
-        record.calories > 0 -> "${record.calories} calories burned"
-        record.waterMl > 0 -> "${record.waterMl} ml water"
-        record.sleepMinutes > 0 ->
-            "${record.sleepMinutes / 60}h ${record.sleepMinutes % 60}m sleep"
+    val parts = buildList {
+        if (record.steps > 0) {
+            add("%,d steps".format(record.steps))
+        }
 
+        if (record.calories > 0) {
+            add("%,d kcal".format(record.calories))
+        }
+
+        if (record.waterMl > 0) {
+            add("%,d ml water".format(record.waterMl))
+        }
+
+        if (record.sleepMinutes > 0) {
+            val hours = record.sleepMinutes / 60
+            val minutes = record.sleepMinutes % 60
+            add("${hours}h ${minutes}m sleep")
+        }
+    }
+
+    val recordedText = when {
+        parts.isNotEmpty() -> parts.joinToString(" · ")
         !record.note.isNullOrBlank() -> record.note
         else -> "No health data recorded"
     }
