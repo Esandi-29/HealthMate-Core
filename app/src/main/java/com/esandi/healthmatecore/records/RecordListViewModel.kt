@@ -37,6 +37,14 @@ class RecordListViewModel(
             initialValue = emptyList()
         )
 
+    val allRecords: StateFlow<List<HealthRecord>> =
+        repository.getAllRecords()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
+
     fun setDateFilter(date: String) {
         selectedDate.value = date
     }

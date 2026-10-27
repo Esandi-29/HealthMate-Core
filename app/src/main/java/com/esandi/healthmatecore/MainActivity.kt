@@ -97,6 +97,13 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.horizontalScroll
+import com.esandi.healthmatecore.records.DateRange
+import com.esandi.healthmatecore.records.MetricFilter
+import com.esandi.healthmatecore.records.dayLabel
+import com.esandi.healthmatecore.records.filterRecords
 
 data class BottomTab(
     val route: String,
@@ -136,6 +143,7 @@ class MainActivity : ComponentActivity() {
             val records by viewModel.records.collectAsState()
             val todayTotals by viewModel.todayTotals.collectAsState()
             val dateFilter by viewModel.dateFilter.collectAsState()
+            val allRecords by viewModel.allRecords.collectAsState()
 
             HealthMateCoreTheme {
                 val navController = rememberNavController()
@@ -247,12 +255,14 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable("home") {
                             RecordsScreen(
-                                records = records,
+                                records = allRecords,
                                 totals = todayTotals,
                                 onDatePicked = { date ->
                                     viewModel.setDateFilter(date)
                                     navController.navigate("history") {
-                                        popUpTo("home") { saveState = true }
+                                        popUpTo("home") {
+                                            saveState = true
+                                        }
                                         launchSingleTop = true
                                     }
                                 }
@@ -317,7 +327,7 @@ class MainActivity : ComponentActivity() {
                                 ?.getString("recordId")
                                 ?.toLongOrNull()
 
-                            val record = records.find { it.id == recordId }
+                            val record = allRecords.find { it.id == recordId }
 
                             if (record != null) {
                                 EditRecordScreen(
@@ -356,7 +366,7 @@ class MainActivity : ComponentActivity() {
                                 ?.getString("recordId")
                                 ?.toLongOrNull()
 
-                            val record = records.firstOrNull { it.id == recordId }
+                            val record = allRecords.firstOrNull { it.id == recordId }
 
                             if (record != null) {
                                 RecordDetailsScreen(
@@ -618,7 +628,7 @@ fun RecordRow(
             modifier = Modifier.weight(1f)
         ) {
             Text(
-                text = "${record.date} • ${record.time}",
+                text = record.time,
                 style = MaterialTheme.typography.titleMedium
             )
 
@@ -656,39 +666,63 @@ fun RecordList(
     LazyColumn(
         modifier = modifier
     ) {
-        itemsIndexed(records) { index, record ->
-            val isFirst = index == 0
-            val isLast = index == records.lastIndex
+        val byDay = records.groupBy { it.date }
 
-            val shape = RoundedCornerShape(
-                topStart = if (isFirst) 16.dp else 0.dp,
-                topEnd = if (isFirst) 16.dp else 0.dp,
-                bottomStart = if (isLast) 16.dp else 0.dp,
-                bottomEnd = if (isLast) 16.dp else 0.dp
-            )
+        byDay.forEach { (date, dayRecords) ->
 
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .fillMaxWidth()
-                    .clip(shape)
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                RecordRow(
-                    record = record,
-                    onClick = { onOpen(record) },
-                    onEditClick = {
-                        onEdit(record)
-                    },
-                    onDeleteClick = {
-                        recordToDelete = record
-                    }
+            item(key = "header-$date") {
+                Text(
+                    text = dayLabel(date, LocalDate.now()),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(
+                        start = 32.dp,
+                        top = 16.dp,
+                        bottom = 6.dp
+                    )
+                )
+            }
+
+            itemsIndexed(
+                dayRecords,
+                key = { _, record -> record.id }
+            ) { index, record ->
+
+                val isFirst = index == 0
+                val isLast = index == dayRecords.lastIndex
+
+                val shape = RoundedCornerShape(
+                    topStart = if (isFirst) 16.dp else 0.dp,
+                    topEnd = if (isFirst) 16.dp else 0.dp,
+                    bottomStart = if (isLast) 16.dp else 0.dp,
+                    bottomEnd = if (isLast) 16.dp else 0.dp
                 )
 
-                if (!isLast) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 16.dp)
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxWidth()
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.surface)
+                ) {
+                    RecordRow(
+                        record = record,
+                        onClick = {
+                            onOpen(record)
+                        },
+                        onEditClick = {
+                            onEdit(record)
+                        },
+                        onDeleteClick = {
+                            recordToDelete = record
+                        }
                     )
+
+                    if (!isLast) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
                 }
             }
         }
@@ -1307,6 +1341,21 @@ fun HistoryScreen(
     onDelete: (HealthRecord) -> Unit,
     onOpen: (HealthRecord) -> Unit
 ) {
+    var range by rememberSaveable {
+        mutableStateOf(DateRange.ALL)
+    }
+
+    var metric by rememberSaveable {
+        mutableStateOf(MetricFilter.ALL)
+    }
+
+    val shownRecords = filterRecords(
+        records = records,
+        range = if (selectedDate != null) DateRange.ALL else range,
+        metric = metric,
+        today = LocalDate.now()
+    )
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -1321,7 +1370,41 @@ fun HistoryScreen(
             onDatePicked = onDatePicked,
             onClear = onClearDateFilter
         )
+        Column(
+            modifier = Modifier.padding(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DateRange.entries.forEach { option ->
+                    FilterChip(
+                        selected = range == option,
+                        onClick = { range = option },
+                        enabled = selectedDate == null,
+                        label = { Text(option.label) }
+                    )
+                }
+            }
 
+            Row(
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                MetricFilter.entries.forEach { option ->
+                    FilterChip(
+                        selected = metric == option,
+                        onClick = { metric = option },
+                        label = { Text(option.label) }
+                    )
+                }
+            }
+        }
 
         if (records.isEmpty()) {
             if (selectedDate != null) {
@@ -1343,9 +1426,18 @@ fun HistoryScreen(
                     color = MaterialTheme.colorScheme.onBackground
                 )
             }
+        } else if (shownRecords.isEmpty()) {
+            Text(
+                text = "No records match these filters.",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onBackground
+            )
         } else {
             RecordList(
-                records = records,
+                records = shownRecords,
                 onOpen = onOpen,
                 onDelete = onDelete,
                 onEdit = onEdit,
