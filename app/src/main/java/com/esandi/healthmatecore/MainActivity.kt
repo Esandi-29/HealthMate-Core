@@ -107,6 +107,9 @@ import com.esandi.healthmatecore.records.filterRecords
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.Slider
+import kotlin.math.roundToInt
+import androidx.compose.material3.AssistChip
 
 data class BottomTab(
     val route: String,
@@ -494,6 +497,18 @@ fun AddRecordForm(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Slider(
+                    value = (stepsText.toIntOrNull() ?: 0)
+                        .coerceIn(0, 30_000)
+                        .toFloat(),
+                    onValueChange = { value ->
+                        stepsText = ((value / 100).roundToInt() * 100).toString()
+                        stepsError = null
+                        formError = null
+                    },
+                    valueRange = 0f..30_000f,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             RecordTab.CALORIES -> {
@@ -512,6 +527,18 @@ fun AddRecordForm(
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Slider(
+                    value = (caloriesText.toIntOrNull() ?: 0)
+                        .coerceIn(0, 2_000)
+                        .toFloat(),
+                    onValueChange = { value ->
+                        caloriesText = ((value / 10).roundToInt() * 10).toString()
+                        caloriesError = null
+                        formError = null
+                    },
+                    valueRange = 0f..2_000f,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -534,6 +561,31 @@ fun AddRecordForm(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(250, 500, 750).forEach { amount ->
+                        AssistChip(
+                            onClick = {
+                                val current = waterText.toIntOrNull() ?: 0
+                                waterText = (current + amount).toString()
+                                waterError = null
+                                formError = null
+                            },
+                            label = { Text("+$amount ml") }
+                        )
+                    }
+
+                    AssistChip(
+                        onClick = {
+                            waterText = ""
+                            waterError = null
+                            formError = null
+                        },
+                        label = { Text("Clear") }
+                    )
+                }
             }
 
             RecordTab.SLEEP -> {
