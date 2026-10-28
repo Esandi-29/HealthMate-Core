@@ -116,6 +116,7 @@ import com.esandi.healthmatecore.records.sleepMinutesBetween
 import androidx.compose.ui.text.font.FontWeight
 import com.esandi.healthmatecore.ui.theme.Roboto
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.FilterChipDefaults
 import com.esandi.healthmatecore.ui.theme.RingLimeDark
 import com.esandi.healthmatecore.ui.theme.RingLimeLight
 import com.esandi.healthmatecore.ui.theme.RingMintLight
@@ -133,6 +134,7 @@ import com.esandi.healthmatecore.ui.theme.BrightBlue
 import com.esandi.healthmatecore.ui.theme.DeepBlue
 import com.esandi.healthmatecore.ui.theme.SoftViolet
 import com.esandi.healthmatecore.ui.theme.DeepPurple
+import com.esandi.healthmatecore.ui.theme.SuccessGreen
 
 data class BottomTab(
     val route: String,
@@ -1607,6 +1609,12 @@ fun HistoryScreen(
         metric = metric,
         today = LocalDate.now()
     )
+    val faintOutline = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)
+
+    val solidBlueColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.primary,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+    )
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -1637,7 +1645,15 @@ fun HistoryScreen(
                         selected = range == option,
                         onClick = { range = option },
                         enabled = selectedDate == null,
-                        label = { Text(option.label) }
+                        label = { Text(option.label) },
+                        colors = solidBlueColors,
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = selectedDate == null,
+                            selected = range == option,
+                            borderColor = faintOutline,
+                            selectedBorderColor = MaterialTheme.colorScheme.primary,
+                            borderWidth = 0.5.dp
+                        )
                     )
                 }
             }
@@ -1649,10 +1665,40 @@ fun HistoryScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 MetricFilter.entries.forEach { option ->
+                    val metricColor = when (option) {
+                        MetricFilter.STEPS -> SuccessGreen
+                        MetricFilter.CALORIES -> ErrorRed
+                        MetricFilter.WATER -> BrightBlue
+                        MetricFilter.SLEEP -> SoftViolet
+                        MetricFilter.ALL -> MaterialTheme.colorScheme.primary
+                    }
+                    val isAll = option == MetricFilter.ALL
+
                     FilterChip(
                         selected = metric == option,
                         onClick = { metric = option },
-                        label = { Text(option.label) }
+                        label = { Text(option.label) },
+                        shape = CircleShape,
+                        colors = if (isAll) {
+                            solidBlueColors
+                        } else {
+                            FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = metricColor.copy(alpha = 0.22f),
+                                selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = metric == option,
+                            borderColor = faintOutline,
+                            selectedBorderColor = if (isAll) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                metricColor.copy(alpha = 0.4f)
+                            },
+                            borderWidth = 0.5.dp,
+                            selectedBorderWidth = 1.dp
+                        )
                     )
                 }
             }
