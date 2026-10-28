@@ -113,6 +113,11 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import com.esandi.healthmatecore.records.sleepMinutesBetween
+import androidx.compose.ui.text.font.FontWeight
+import com.esandi.healthmatecore.ui.theme.Roboto
+import androidx.compose.foundation.isSystemInDarkTheme
+import com.esandi.healthmatecore.ui.theme.RingMintLight
+import com.esandi.healthmatecore.ui.theme.RingMintDark
 
 data class BottomTab(
     val route: String,
@@ -1002,13 +1007,11 @@ fun WelcomeHeader(modifier: Modifier = Modifier) {
         modifier = modifier.padding(16.dp)
     ) {
         Text(
-            text = "HealthMate",
-            style = MaterialTheme.typography.headlineLarge
-        )
-
-        Text(
             text = "Welcome back, Esandi",
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontFamily = Roboto,
+                fontWeight = FontWeight.Normal
+            )
         )
     }
 }
@@ -1106,8 +1109,9 @@ fun TodaySummary(totals: DailyTotals) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "Today's Summary",
-            style = MaterialTheme.typography.headlineSmall,
+            text = "Today's summary",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
@@ -1373,6 +1377,7 @@ fun WeekStrip(
 
     val weekDays = (0..6).map { monday.plusDays(it.toLong()) }
     val datesWithRecords = records.map { it.date }.toSet()
+    val dotColor = if (isSystemInDarkTheme()) RingMintDark else RingMintLight
 
     Row(
         modifier = Modifier
@@ -1407,7 +1412,7 @@ fun WeekStrip(
                         .clip(CircleShape)
                         .background(
                             if (isToday) {
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.onBackground
                             } else {
                                 Color.Transparent
                             }
@@ -1418,7 +1423,7 @@ fun WeekStrip(
                         text = date.dayOfMonth.toString(),
                         style = MaterialTheme.typography.titleSmall,
                         color = if (isToday) {
-                            MaterialTheme.colorScheme.onPrimary
+                            MaterialTheme.colorScheme.background
                         } else {
                             MaterialTheme.colorScheme.onSurface
                         }
@@ -1431,7 +1436,7 @@ fun WeekStrip(
                         .clip(CircleShape)
                         .background(
                             if (hasRecords) {
-                                MaterialTheme.colorScheme.primary
+                                dotColor
                             } else {
                                 Color.Transparent
                             }
