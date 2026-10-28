@@ -41,6 +41,7 @@ import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.details.RecordDetailsScreen
 import com.esandi.healthmatecore.history.HistoryScreen
 import com.esandi.healthmatecore.home.RecordsScreen
+import com.esandi.healthmatecore.progress.ProgressScreen
 import com.esandi.healthmatecore.recordform.AddRecordScreen
 import com.esandi.healthmatecore.recordform.EditRecordScreen
 import com.esandi.healthmatecore.records.RecordListViewModel
@@ -90,6 +91,8 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
     val todayTotals by viewModel.todayTotals.collectAsState()
     val dateFilter by viewModel.dateFilter.collectAsState()
     val allRecords by viewModel.allRecords.collectAsState()
+    val weekTotals by viewModel.weekTotals.collectAsState()
+    val weekStart by viewModel.selectedWeekStart.collectAsState()
 
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -237,9 +240,11 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
             }
 
             composable("progress") {
-                PlaceholderScreen(
-                    title = "Progress",
-                    message = "Your weekly charts will appear here."
+                ProgressScreen(
+                    weekTotals = weekTotals,
+                    weekStart = weekStart,
+                    onPreviousWeek = viewModel::previousWeek,
+                    onNextWeek = viewModel::nextWeek
                 )
             }
 

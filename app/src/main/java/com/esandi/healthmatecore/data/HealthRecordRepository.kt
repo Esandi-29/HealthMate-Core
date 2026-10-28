@@ -38,5 +38,13 @@ class HealthRecordRepository(
     }
     fun getTotalsForDate(date: String): Flow<DailyTotals> {
         return healthRecordDao.getTotalsForDate(date)
+
+    }
+
+    fun getDailyTotalsBetween(
+        start: String,
+        end: String
+    ): Flow<List<DayTotals>> {
+        return healthRecordDao.getDailyTotalsBetween(start, end)
     }
 }

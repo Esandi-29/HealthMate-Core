@@ -3,6 +3,7 @@ package com.esandi.healthmatecore.records
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.esandi.healthmatecore.data.DailyTotals
+import com.esandi.healthmatecore.data.DayTotals
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.data.HealthRecordRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,7 +13,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecordListViewModel(
@@ -65,6 +68,37 @@ class RecordListViewModel(
                     sleepMinutes = 0
                 )
             )
+    private fun thisMonday(): LocalDate =
+        LocalDate.now().with(
+            TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
+        )
+
+    private val weekStart = MutableStateFlow(thisMonday())
+
+    val selectedWeekStart: StateFlow<LocalDate> = weekStart
+
+    val weekTotals: StateFlow<List<DayTotals>> = weekStart
+        .flatMapLatest { start ->
+            repository.getDailyTotalsBetween(
+                start.toString(),
+                start.plusDays(6).toString()
+            )
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    fun previousWeek() {
+        weekStart.value = weekStart.value.minusWeeks(1)
+    }
+
+    fun nextWeek() {
+        if (weekStart.value < thisMonday()) {
+            weekStart.value = weekStart.value.plusWeeks(1)
+        }
+    }
 
     fun addRecord(record: HealthRecord) {
         viewModelScope.launch {
