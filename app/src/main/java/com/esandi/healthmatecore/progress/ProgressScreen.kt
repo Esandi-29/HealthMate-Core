@@ -1,25 +1,52 @@
 package com.esandi.healthmatecore.progress
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.esandi.healthmatecore.data.DayTotals
 import com.esandi.healthmatecore.records.MetricFilter
-import com.esandi.healthmatecore.ui.theme.*
+import com.esandi.healthmatecore.ui.theme.BrightBlue
+import com.esandi.healthmatecore.ui.theme.ErrorRed
+import com.esandi.healthmatecore.ui.theme.RingMintDark
+import com.esandi.healthmatecore.ui.theme.RingMintLight
+import com.esandi.healthmatecore.ui.theme.SoftViolet
+import com.esandi.healthmatecore.ui.theme.SuccessGreen
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import androidx.compose.ui.Alignment
+
 
 @Composable
 fun ProgressScreen(
@@ -45,6 +72,39 @@ fun ProgressScreen(
     val dateFormatter = DateTimeFormatter.ofPattern("d MMM")
     val weekEnd = weekStart.plusDays(6)
     val weekLabel = "${weekStart.format(dateFormatter)} to ${weekEnd.format(dateFormatter)}"
+    val days = (0..6).map { weekStart.plusDays(it.toLong()) }
+    val today = LocalDate.now()
+
+    val values = days.map { day ->
+        val totals = weekTotals.firstOrNull { it.date == day.toString() }
+
+        when (metric) {
+            MetricFilter.STEPS -> totals?.steps ?: 0
+            MetricFilter.CALORIES -> totals?.calories ?: 0
+            MetricFilter.WATER -> totals?.waterMl ?: 0
+            MetricFilter.SLEEP -> totals?.sleepMinutes ?: 0
+            MetricFilter.ALL -> 0
+        }
+    }
+
+    val goal = when (metric) {
+        MetricFilter.STEPS -> 8000
+        MetricFilter.CALORIES -> 400
+        MetricFilter.WATER -> 2000
+        MetricFilter.SLEEP -> 480
+        MetricFilter.ALL -> 0
+    }
+
+    val barColor = when (metric) {
+        MetricFilter.STEPS ->
+            if (isSystemInDarkTheme()) RingMintDark else RingMintLight
+        MetricFilter.CALORIES -> ErrorRed
+        MetricFilter.WATER -> BrightBlue
+        MetricFilter.SLEEP -> SoftViolet
+        MetricFilter.ALL -> MaterialTheme.colorScheme.primary
+    }
+
+    val todayIndex = days.indexOf(today)
 
     Column(
         modifier = Modifier
@@ -155,7 +215,133 @@ fun ProgressScreen(
                 }
             }
 
-            // Part 2: the chart will go here.
+            WeekBarChart(
+                values = values,
+                goal = goal,
+                todayIndex = todayIndex,
+                futureFrom = if (todayIndex >= 0) todayIndex + 1 else 7,
+                color = barColor,
+                metric = metric
+            )
+        }
+    }
+}
+
+private fun shortValue(
+    value: Int,
+    metric: MetricFilter
+): String {
+    return when (metric) {
+        MetricFilter.STEPS ->
+            if (value >= 1000) "%.1fk".format(value / 1000f) else "$value"
+
+        MetricFilter.SLEEP -> "${value / 60}h"
+
+        else -> "$value"
+    }
+}
+
+@Composable
+private fun WeekBarChart(
+    values: List<Int>,
+    goal: Int,
+    todayIndex: Int,
+    futureFrom: Int,
+    color: Color,
+    metric: MetricFilter
+) {
+    val chartHeight = 140.dp
+    val top = (
+            maxOf(values.maxOrNull() ?: 0, goal) * 1.15f
+            ).coerceAtLeast(1f)
+
+    val labels = listOf("M", "T", "W", "T", "F", "S", "S")
+    val lineColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(chartHeight + 40.dp)
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(chartHeight + 24.dp)
+        ) {
+            val y = size.height -
+                    (goal / top) * chartHeight.toPx()
+
+            drawLine(
+                color = lineColor.copy(alpha = 0.6f),
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1.5.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(
+                    floatArrayOf(10f, 8f)
+                )
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            values.forEachIndexed { index, value ->
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    if (value > 0 && index < futureFrom) {
+                        Text(
+                            text = shortValue(value, metric),
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    if (index < futureFrom && value > 0) {
+                        Box(
+                            modifier = Modifier
+                                .width(20.dp)
+                                .height(
+                                    chartHeight * (value / top)
+                                )
+                                .clip(
+                                    RoundedCornerShape(
+                                        topStart = 8.dp,
+                                        topEnd = 8.dp,
+                                        bottomStart = 4.dp,
+                                        bottomEnd = 4.dp
+                                    )
+                                )
+                                .background(
+                                    when {
+                                        value >= goal -> color
+                                        index == todayIndex -> color
+                                        else -> color.copy(alpha = 0.45f)
+                                    }
+                                )
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+
+                    Text(
+                        text = labels[index],
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (index == todayIndex) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+            }
         }
     }
 }
