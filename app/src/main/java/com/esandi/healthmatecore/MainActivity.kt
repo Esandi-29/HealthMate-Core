@@ -122,6 +122,17 @@ import com.esandi.healthmatecore.ui.theme.RingMintLight
 import com.esandi.healthmatecore.ui.theme.RingMintDark
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.rotate
+import com.esandi.healthmatecore.ui.theme.CaloriesTextLight
+import com.esandi.healthmatecore.ui.theme.SunsetOrange
+import com.esandi.healthmatecore.ui.theme.CaloriesTextDark
+import com.esandi.healthmatecore.ui.theme.WaterTextLight
+import com.esandi.healthmatecore.ui.theme.WaterTextDark
+import com.esandi.healthmatecore.ui.theme.SleepTextLight
+import com.esandi.healthmatecore.ui.theme.SleepTextDark
+import com.esandi.healthmatecore.ui.theme.BrightBlue
+import com.esandi.healthmatecore.ui.theme.DeepBlue
+import com.esandi.healthmatecore.ui.theme.SoftViolet
+import com.esandi.healthmatecore.ui.theme.DeepPurple
 
 data class BottomTab(
     val route: String,
@@ -1107,6 +1118,7 @@ fun EditRecordScreen(
 fun TodaySummary(totals: DailyTotals) {
     val sleepHours = totals.sleepMinutes / 60
     val sleepRemainder = totals.sleepMinutes % 60
+    val dark = isSystemInDarkTheme()
 
     Column(
         modifier = Modifier.padding(vertical = 8.dp),
@@ -1142,7 +1154,9 @@ fun TodaySummary(totals: DailyTotals) {
                 value = "%,d".format(totals.calories),
                 label = "Calories",
                 icon = R.drawable.ic_calories,
-                color = ErrorRed,
+                color = if (dark) CaloriesTextDark else CaloriesTextLight,
+                gradientStart = ErrorRed,
+                gradientEnd = SunsetOrange,
                 modifier = Modifier.weight(1f)
             )
 
@@ -1150,7 +1164,9 @@ fun TodaySummary(totals: DailyTotals) {
                 value = "${totals.waterMl} ml",
                 label = "Water",
                 icon = R.drawable.ic_water,
-                color = MaterialTheme.colorScheme.primary,
+                color = if (dark) WaterTextDark else WaterTextLight,
+                gradientStart = BrightBlue,
+                gradientEnd = DeepBlue,
                 modifier = Modifier.weight(1f)
             )
 
@@ -1158,7 +1174,9 @@ fun TodaySummary(totals: DailyTotals) {
                 value = "${sleepHours}h ${sleepRemainder}m",
                 label = "Sleep",
                 icon = R.drawable.ic_sleep,
-                color = MaterialTheme.colorScheme.secondary,
+                color = if (dark) SleepTextDark else SleepTextLight,
+                gradientStart = SoftViolet,
+                gradientEnd = DeepPurple,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -1351,12 +1369,21 @@ fun MetricTile(
     label: String,
     icon: Int,
     color: Color,
+    gradientStart: Color,
+    gradientEnd: Color,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(color.copy(alpha = 0.12f))
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        gradientStart.copy(alpha = if (isSystemInDarkTheme()) 0.20f else 0.14f),
+                        gradientEnd.copy(alpha = if (isSystemInDarkTheme()) 0.20f else 0.14f)
+                    )
+                )
+            )
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
