@@ -116,8 +116,12 @@ import com.esandi.healthmatecore.records.sleepMinutesBetween
 import androidx.compose.ui.text.font.FontWeight
 import com.esandi.healthmatecore.ui.theme.Roboto
 import androidx.compose.foundation.isSystemInDarkTheme
+import com.esandi.healthmatecore.ui.theme.RingLimeDark
+import com.esandi.healthmatecore.ui.theme.RingLimeLight
 import com.esandi.healthmatecore.ui.theme.RingMintLight
 import com.esandi.healthmatecore.ui.theme.RingMintDark
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.drawscope.rotate
 
 data class BottomTab(
     val route: String,
@@ -1277,7 +1281,11 @@ fun StepsRing(
     }
 
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
-    val ringColor = MaterialTheme.colorScheme.primary
+    val ringStart =
+        if (isSystemInDarkTheme()) RingMintDark else RingMintLight
+
+    val ringEnd =
+        if (isSystemInDarkTheme()) RingLimeDark else RingLimeLight
 
     Box(
         modifier = Modifier.size(170.dp),
@@ -1300,13 +1308,22 @@ fun StepsRing(
             )
 
             if (progress > 0f) {
-                drawArc(
-                    color = ringColor,
-                    startAngle = -90f,
-                    sweepAngle = 360f * progress,
-                    useCenter = false,
-                    style = stroke
-                )
+                rotate(degrees = -90f) {
+                    drawArc(
+                        brush = Brush.sweepGradient(
+                            colorStops = arrayOf(
+                                0f to ringStart,
+                                progress to ringEnd,
+                                1f to ringStart
+                            ),
+                            center = center
+                        ),
+                        startAngle = 0f,
+                        sweepAngle = 360f * progress,
+                        useCenter = false,
+                        style = stroke
+                    )
+                }
             }
         }
 
