@@ -47,7 +47,6 @@ import com.esandi.healthmatecore.ui.theme.SuccessGreen
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-
 @Composable
 fun ProgressScreen(
     weekTotals: List<DayTotals>,
@@ -105,6 +104,27 @@ fun ProgressScreen(
     }
 
     val todayIndex = days.indexOf(today)
+    val futureFrom = if (todayIndex >= 0) todayIndex + 1 else 7
+
+    val daysSoFar = futureFrom
+    val counted = values.take(daysSoFar)
+    val total = counted.sum()
+    val average = if (daysSoFar > 0) total / daysSoFar else 0
+    val goalDays = counted.count { it >= goal }
+
+    val unit = when (metric) {
+        MetricFilter.STEPS -> "steps"
+        MetricFilter.CALORIES -> "kcal"
+        MetricFilter.WATER -> "ml"
+        MetricFilter.SLEEP -> ""
+        MetricFilter.ALL -> ""
+    }
+
+    fun summaryValue(v: Int, metric: MetricFilter): String =
+        when (metric) {
+            MetricFilter.SLEEP -> "${v / 60}h ${v % 60}m"
+            else -> "%,d".format(v)
+        }
 
     Column(
         modifier = Modifier
@@ -219,9 +239,34 @@ fun ProgressScreen(
                 values = values,
                 goal = goal,
                 todayIndex = todayIndex,
-                futureFrom = if (todayIndex >= 0) todayIndex + 1 else 7,
+                futureFrom = futureFrom,
                 color = barColor,
                 metric = metric
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SummaryCard(
+                label = "Total",
+                value = summaryValue(total, metric),
+                unit = unit,
+                modifier = Modifier.weight(1f)
+            )
+
+            SummaryCard(
+                label = "Daily avg",
+                value = summaryValue(average, metric),
+                unit = unit,
+                modifier = Modifier.weight(1f)
+            )
+
+            SummaryCard(
+                label = "Goal met",
+                value = "$goalDays",
+                unit = "of $daysSoFar days",
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -343,5 +388,39 @@ private fun WeekBarChart(
                 }
             }
         }
+    }
+}
+@Composable
+private fun SummaryCard(
+    label: String,
+    value: String,
+    unit: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(10.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 1
+        )
+
+        Text(
+            text = unit,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
     }
 }
