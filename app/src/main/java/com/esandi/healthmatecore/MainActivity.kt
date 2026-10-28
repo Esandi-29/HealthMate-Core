@@ -76,7 +76,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Color
-import com.esandi.healthmatecore.ui.theme.Coral
+import com.esandi.healthmatecore.ui.theme.ErrorRed
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
@@ -1134,7 +1134,7 @@ fun TodaySummary(totals: DailyTotals) {
                 value = "%,d".format(totals.calories),
                 label = "Calories",
                 icon = R.drawable.ic_calories,
-                color = Coral,
+                color = ErrorRed,
                 modifier = Modifier.weight(1f)
             )
 
@@ -1733,7 +1733,7 @@ fun RecordDetailsScreen(
             if (record.calories > 0) {
                 DetailLine(
                     icon = R.drawable.ic_calories,
-                    color = Coral,
+                    color = ErrorRed,
                     label = "Calories",
                     value = "%,d".format(record.calories)
                 )

@@ -18,9 +18,9 @@ private val LightColorScheme = lightColorScheme(
     error = Magenta,
     onError = White,
     background = LightPage,
-    onBackground = Color(0xFF1C1C1E),
+    onBackground = SoftBlack,
     surface = White,
-    onSurface = Color(0xFF1C1C1E),
+    onSurface = SoftBlack,
     surfaceVariant = Color(0xFFE5E5EA),
 
     primaryContainer = BlueTintLight,
@@ -43,11 +43,11 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = Black,
     error = Pink,
     onError = Black,
-    background = Black,
-    onBackground = White,
+    background = DarkPage,
+    onBackground = SoftWhite,
     surface = DarkCard,
-    onSurface = White,
-    surfaceVariant = Color(0xFF2C2C2E),
+    onSurface = SoftWhite,
+    surfaceVariant = Color(0xFF3A3A3D),
 
     primaryContainer = BlueTintDark,
     onPrimaryContainer = BrightBlue,
@@ -57,9 +57,7 @@ private val DarkColorScheme = darkColorScheme(
     surfaceContainer = DarkCard,
     surfaceContainerHigh = DarkCard,
     surfaceContainerHighest = DarkCard
-
 )
-
 
 @Composable
 fun HealthMateCoreTheme(
