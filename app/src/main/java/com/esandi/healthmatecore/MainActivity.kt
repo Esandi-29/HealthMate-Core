@@ -110,6 +110,9 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Slider
 import kotlin.math.roundToInt
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
+import com.esandi.healthmatecore.records.sleepMinutesBetween
 
 data class BottomTab(
     val route: String,
@@ -428,6 +431,22 @@ fun AddRecordForm(
     }
     var sleepText by remember(initialRecord?.id) {
         mutableStateOf(numberText(initialRecord?.sleepMinutes))
+
+    }
+    var bedTime by remember(initialRecord?.id) {
+        mutableStateOf<LocalTime?>(null)
+    }
+
+    var wakeTime by remember(initialRecord?.id) {
+        mutableStateOf<LocalTime?>(null)
+    }
+
+    var showBedPicker by remember(initialRecord?.id) {
+        mutableStateOf(false)
+    }
+
+    var showWakePicker by remember(initialRecord?.id) {
+        mutableStateOf(false)
     }
 
     var stepsError by remember(initialRecord?.id) {
@@ -606,6 +625,26 @@ fun AddRecordForm(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { showBedPicker = true },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Bed ${bedTime?.toString() ?: "--:--"}")
+                    }
+
+                    OutlinedButton(
+                        onClick = { showWakePicker = true },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Wake ${wakeTime?.toString() ?: "--:--"}")
+                    }
+                }
             }
         }
 
@@ -684,15 +723,57 @@ fun AddRecordForm(
                     caloriesText = ""
                     waterText = ""
                     sleepText = ""
+
                     stepsError = null
                     caloriesError = null
                     waterError = null
                     sleepError = null
                     formError = null
+
+                    bedTime = null
+                    wakeTime = null
                 }
             }
         ) {
             Text("Save")
+        }
+        if (showBedPicker) {
+            TimePickerDialog(
+                title = "Bed time",
+                initialTime = bedTime,
+                onConfirm = { time ->
+                    bedTime = time
+                    showBedPicker = false
+
+                    wakeTime?.let { wake ->
+                        sleepText = sleepMinutesBetween(time, wake).toString()
+                        sleepError = null
+                        formError = null
+                    }
+                },
+                onDismiss = {
+                    showBedPicker = false
+                }
+            )
+        }
+        if (showWakePicker) {
+            TimePickerDialog(
+                title = "Wake time",
+                initialTime = wakeTime ?: LocalTime.of(7, 0),
+                onConfirm = { time ->
+                    wakeTime = time
+                    showWakePicker = false
+
+                    bedTime?.let { bed ->
+                        sleepText = sleepMinutesBetween(bed, time).toString()
+                        sleepError = null
+                        formError = null
+                    }
+                },
+                onDismiss = {
+                    showWakePicker = false
+                }
+            )
         }
     }
 }
@@ -1762,4 +1843,48 @@ fun RecordDetailsScreen(
             }
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerDialog(
+    title: String,
+    initialTime: LocalTime?,
+    onConfirm: (LocalTime) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val state = rememberTimePickerState(
+        initialHour = initialTime?.hour ?: 22,
+        initialMinute = initialTime?.minute ?: 0,
+        is24Hour = true
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(title)
+        },
+        text = {
+            TimePicker(state = state)
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        LocalTime.of(
+                            state.hour,
+                            state.minute
+                        )
+                    )
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
