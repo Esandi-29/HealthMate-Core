@@ -1790,6 +1790,8 @@ fun RecordDetailsScreen(
         mutableStateOf(false)
     }
 
+    val dark = isSystemInDarkTheme()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1804,7 +1806,7 @@ fun RecordDetailsScreen(
         }
 
         Text(
-            text = "${record.date} • ${record.time}",
+            text = "${dayLabel(record.date, LocalDate.now())} • ${record.time}",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
@@ -1818,8 +1820,8 @@ fun RecordDetailsScreen(
         ) {
             if (record.steps > 0) {
                 DetailLine(
-                    icon = R.drawable.ic_progress,
-                    color = MaterialTheme.colorScheme.primary,
+                    icon = R.drawable.ic_steps,
+                    color = if (dark) RingMintDark else RingMintLight,
                     label = "Steps",
                     value = "%,d".format(record.steps)
                 )
@@ -1828,7 +1830,7 @@ fun RecordDetailsScreen(
             if (record.calories > 0) {
                 DetailLine(
                     icon = R.drawable.ic_calories,
-                    color = ErrorRed,
+                    color = if (dark) CaloriesTextDark else CaloriesTextLight,
                     label = "Calories",
                     value = "%,d".format(record.calories)
                 )
@@ -1837,7 +1839,7 @@ fun RecordDetailsScreen(
             if (record.waterMl > 0) {
                 DetailLine(
                     icon = R.drawable.ic_water,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = if (dark) WaterTextDark else WaterTextLight,
                     label = "Water",
                     value = "${record.waterMl} ml"
                 )
@@ -1849,7 +1851,7 @@ fun RecordDetailsScreen(
 
                 DetailLine(
                     icon = R.drawable.ic_sleep,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = if (dark) SleepTextDark else SleepTextLight,
                     label = "Sleep",
                     value = "${hours}h ${minutes}m"
                 )
