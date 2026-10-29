@@ -41,6 +41,7 @@ import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.details.RecordDetailsScreen
 import com.esandi.healthmatecore.history.HistoryScreen
 import com.esandi.healthmatecore.home.RecordsScreen
+import com.esandi.healthmatecore.profile.ProfileScreen
 import com.esandi.healthmatecore.progress.ProgressScreen
 import com.esandi.healthmatecore.recordform.AddRecordScreen
 import com.esandi.healthmatecore.recordform.EditRecordScreen
@@ -261,9 +262,46 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
             }
 
             composable("profile") {
+                ProfileScreen(
+                    name = "Esandi",
+                    onOptionClick = { route ->
+                        navController.navigate(route)
+                    }
+                )
+            }
+
+            composable("personal_info") {
                 PlaceholderScreen(
-                    title = "Profile",
-                    message = "Your goals and settings will appear here."
+                    title = "Personal Information",
+                    message = "Coming soon."
+                )
+            }
+
+            composable("goals") {
+                PlaceholderScreen(
+                    title = "Goals and Targets",
+                    message = "Your daily goals will be set here (P13b)."
+                )
+            }
+
+            composable("notifications") {
+                PlaceholderScreen(
+                    title = "Notifications",
+                    message = "Coming soon."
+                )
+            }
+
+            composable("app_settings") {
+                PlaceholderScreen(
+                    title = "App Settings",
+                    message = "Coming soon."
+                )
+            }
+
+            composable("help") {
+                PlaceholderScreen(
+                    title = "Help and Support",
+                    message = "Coming soon."
                 )
             }
 
