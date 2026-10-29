@@ -93,6 +93,8 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
     val allRecords by viewModel.allRecords.collectAsState()
     val weekTotals by viewModel.weekTotals.collectAsState()
     val weekStart by viewModel.selectedWeekStart.collectAsState()
+    val monthTotals by viewModel.monthTotals.collectAsState()
+    val monthStart by viewModel.selectedMonthStart.collectAsState()
 
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -244,7 +246,11 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
                     weekTotals = weekTotals,
                     weekStart = weekStart,
                     onPreviousWeek = viewModel::previousWeek,
-                    onNextWeek = viewModel::nextWeek
+                    onNextWeek = viewModel::nextWeek,
+                    monthTotals = monthTotals,
+                    monthStart = monthStart,
+                    onPreviousMonth = viewModel::previousMonth,
+                    onNextMonth = viewModel::nextMonth
                 )
             }
 

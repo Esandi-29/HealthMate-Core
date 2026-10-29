@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.esandi.healthmatecore.data.DayTotals
 import com.esandi.healthmatecore.records.MetricFilter
@@ -56,7 +58,11 @@ fun ProgressScreen(
     weekTotals: List<DayTotals>,
     weekStart: LocalDate,
     onPreviousWeek: () -> Unit,
-    onNextWeek: () -> Unit
+    onNextWeek: () -> Unit,
+    monthTotals: List<DayTotals>,
+    monthStart: LocalDate,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit
 ) {
     var metric by rememberSaveable {
         mutableStateOf(MetricFilter.STEPS)
@@ -75,11 +81,40 @@ fun ProgressScreen(
     val dateFormatter = DateTimeFormatter.ofPattern("d MMM")
     val weekEnd = weekStart.plusDays(6)
     val weekLabel = "${weekStart.format(dateFormatter)} to ${weekEnd.format(dateFormatter)}"
-    val days = (0..6).map { weekStart.plusDays(it.toLong()) }
+    val isMonth = period == "Month"
+
+    val days = if (isMonth) {
+        (0 until monthStart.lengthOfMonth()).map {
+            monthStart.plusDays(it.toLong())
+        }
+    } else {
+        (0..6).map { weekStart.plusDays(it.toLong()) }
+    }
+
+    val periodTotals = if (isMonth) monthTotals else weekTotals
+
+    val rangeLabel = if (isMonth) {
+        monthStart.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+    } else {
+        weekLabel
+    }
+
+    val barLabels = if (isMonth) {
+        days.map { day ->
+            if (day.dayOfMonth == 1 || day.dayOfMonth % 5 == 0) {
+                "${day.dayOfMonth}"
+            } else {
+                ""
+            }
+        }
+    } else {
+        listOf("M", "T", "W", "T", "F", "S", "S")
+    }
+
     val today = LocalDate.now()
 
     val values = days.map { day ->
-        val totals = weekTotals.firstOrNull { it.date == day.toString() }
+        val totals = periodTotals.firstOrNull { it.date == day.toString() }
 
         when (metric) {
             MetricFilter.STEPS -> totals?.steps ?: 0
@@ -115,7 +150,7 @@ fun ProgressScreen(
     }
 
     val todayIndex = days.indexOf(today)
-    val futureFrom = if (todayIndex >= 0) todayIndex + 1 else 7
+    val futureFrom = if (todayIndex >= 0) todayIndex + 1 else days.size
 
     val daysSoFar = futureFrom
     val counted = values.take(daysSoFar)
@@ -230,18 +265,18 @@ fun ProgressScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onPreviousWeek) {
+                IconButton(onClick = if (isMonth) onPreviousMonth else onPreviousWeek) {
                     Text("‹", style = MaterialTheme.typography.headlineMedium)
                 }
 
                 Text(
-                    text = weekLabel,
+                    text = rangeLabel,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                IconButton(onClick = onNextWeek) {
+                IconButton(onClick = if (isMonth) onNextMonth else onNextWeek) {
                     Text("›", style = MaterialTheme.typography.headlineMedium)
                 }
             }
@@ -253,7 +288,10 @@ fun ProgressScreen(
                 futureFrom = futureFrom,
                 color = barColor,
                 goalTopColor = goalTopColor,
-                metric = metric
+                metric = metric,
+                labels = barLabels,
+                barWidth = if (isMonth) 6.dp else 20.dp,
+                showValues = !isMonth
             )
         }
         Row(
@@ -306,14 +344,16 @@ private fun WeekBarChart(
     futureFrom: Int,
     color: Color,
     goalTopColor: Color,
-    metric: MetricFilter
+    metric: MetricFilter,
+    labels: List<String>,
+    barWidth: Dp,
+    showValues: Boolean
 ) {
     val chartHeight = 140.dp
     val top = (
             maxOf(values.maxOrNull() ?: 0, goal) * 1.15f
             ).coerceAtLeast(1f)
 
-    val labels = listOf("M", "T", "W", "T", "F", "S", "S")
     val lineColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
@@ -352,7 +392,7 @@ private fun WeekBarChart(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom
                 ) {
-                    if (value > 0 && index < futureFrom) {
+                    if (showValues && value > 0 && index < futureFrom) {
                         Text(
                             text = shortValue(value, metric),
                             style = MaterialTheme.typography.labelSmall,
@@ -365,7 +405,7 @@ private fun WeekBarChart(
                     if (index < futureFrom && value > 0) {
                         Box(
                             modifier = Modifier
-                                .width(20.dp)
+                                .width(barWidth)
                                 .height(
                                     chartHeight * (value / top)
                                 )
@@ -397,6 +437,9 @@ private fun WeekBarChart(
                     Text(
                         text = labels[index],
                         style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.wrapContentWidth(unbounded = true),
                         color = if (index == todayIndex) {
                             MaterialTheme.colorScheme.onSurface
                         } else {

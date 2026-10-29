@@ -68,6 +68,7 @@ class RecordListViewModel(
                     sleepMinutes = 0
                 )
             )
+
     private fun thisMonday(): LocalDate =
         LocalDate.now().with(
             TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
@@ -97,6 +98,36 @@ class RecordListViewModel(
     fun nextWeek() {
         if (weekStart.value < thisMonday()) {
             weekStart.value = weekStart.value.plusWeeks(1)
+        }
+    }
+
+    private fun thisMonthStart(): LocalDate =
+        LocalDate.now().withDayOfMonth(1)
+
+    private val monthStart = MutableStateFlow(thisMonthStart())
+
+    val selectedMonthStart: StateFlow<LocalDate> = monthStart
+
+    val monthTotals: StateFlow<List<DayTotals>> = monthStart
+        .flatMapLatest { start ->
+            repository.getDailyTotalsBetween(
+                start.toString(),
+                start.plusMonths(1).minusDays(1).toString()
+            )
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    fun previousMonth() {
+        monthStart.value = monthStart.value.minusMonths(1)
+    }
+
+    fun nextMonth() {
+        if (monthStart.value < thisMonthStart()) {
+            monthStart.value = monthStart.value.plusMonths(1)
         }
     }
 
