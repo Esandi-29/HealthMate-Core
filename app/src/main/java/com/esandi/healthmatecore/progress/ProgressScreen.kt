@@ -32,14 +32,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.esandi.healthmatecore.data.DayTotals
 import com.esandi.healthmatecore.records.MetricFilter
 import com.esandi.healthmatecore.ui.theme.BrightBlue
 import com.esandi.healthmatecore.ui.theme.ErrorRed
+import com.esandi.healthmatecore.ui.theme.RingLimeDark
+import com.esandi.healthmatecore.ui.theme.RingLimeLight
 import com.esandi.healthmatecore.ui.theme.RingMintDark
 import com.esandi.healthmatecore.ui.theme.RingMintLight
 import com.esandi.healthmatecore.ui.theme.SoftViolet
@@ -97,10 +101,17 @@ fun ProgressScreen(
     val barColor = when (metric) {
         MetricFilter.STEPS ->
             if (isSystemInDarkTheme()) RingMintDark else RingMintLight
+
         MetricFilter.CALORIES -> ErrorRed
         MetricFilter.WATER -> BrightBlue
         MetricFilter.SLEEP -> SoftViolet
         MetricFilter.ALL -> MaterialTheme.colorScheme.primary
+    }
+
+    val goalTopColor = if (metric == MetricFilter.STEPS) {
+        if (isSystemInDarkTheme()) RingLimeDark else RingLimeLight
+    } else {
+        barColor
     }
 
     val todayIndex = days.indexOf(today)
@@ -241,6 +252,7 @@ fun ProgressScreen(
                 todayIndex = todayIndex,
                 futureFrom = futureFrom,
                 color = barColor,
+                goalTopColor = goalTopColor,
                 metric = metric
             )
         }
@@ -293,6 +305,7 @@ private fun WeekBarChart(
     todayIndex: Int,
     futureFrom: Int,
     color: Color,
+    goalTopColor: Color,
     metric: MetricFilter
 ) {
     val chartHeight = 140.dp
@@ -366,9 +379,14 @@ private fun WeekBarChart(
                                 )
                                 .background(
                                     when {
-                                        value >= goal -> color
-                                        index == todayIndex -> color
-                                        else -> color.copy(alpha = 0.45f)
+                                        value >= goal ->
+                                            Brush.verticalGradient(
+                                                colors = listOf(goalTopColor, color)
+                                            )
+
+                                        index == todayIndex -> SolidColor(color)
+
+                                        else -> SolidColor(color.copy(alpha = 0.45f))
                                     }
                                 )
                         )
@@ -390,6 +408,7 @@ private fun WeekBarChart(
         }
     }
 }
+
 @Composable
 private fun SummaryCard(
     label: String,
