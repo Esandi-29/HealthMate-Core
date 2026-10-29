@@ -113,7 +113,6 @@ fun ProfileHeader(
     onSettingsClick: () -> Unit
 ) {
     Column {
-        // Title on the left, gear on the right
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -132,7 +131,6 @@ fun ProfileHeader(
             }
         }
 
-        // Avatar, then name and subtitle
         Row(
             modifier = Modifier.padding(top = 16.dp, bottom = 24.dp),
             verticalAlignment = Alignment.CenterVertically

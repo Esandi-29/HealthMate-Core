@@ -41,6 +41,7 @@ import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.details.RecordDetailsScreen
 import com.esandi.healthmatecore.history.HistoryScreen
 import com.esandi.healthmatecore.home.RecordsScreen
+import com.esandi.healthmatecore.profile.GoalsScreen
 import com.esandi.healthmatecore.profile.ProfileScreen
 import com.esandi.healthmatecore.progress.ProgressScreen
 import com.esandi.healthmatecore.recordform.AddRecordScreen
@@ -278,9 +279,15 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
             }
 
             composable("goals") {
-                PlaceholderScreen(
-                    title = "Goals and Targets",
-                    message = "Your daily goals will be set here (P13b)."
+                GoalsScreen(
+                    onSave = { _, _, _, _, _ ->
+                        // P13c: save these to the goals table
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Goals saved")
+                        }
+                        navController.popBackStack()
+                    },
+                    onBack = { navController.popBackStack() }
                 )
             }
 
