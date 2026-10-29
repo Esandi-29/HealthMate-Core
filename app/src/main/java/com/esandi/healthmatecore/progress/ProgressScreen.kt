@@ -41,7 +41,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.esandi.healthmatecore.data.DayTotals
+import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.records.MetricFilter
+import com.esandi.healthmatecore.records.dayLabel
 import com.esandi.healthmatecore.ui.theme.BrightBlue
 import com.esandi.healthmatecore.ui.theme.ErrorRed
 import com.esandi.healthmatecore.ui.theme.RingLimeDark
@@ -62,7 +64,11 @@ fun ProgressScreen(
     monthTotals: List<DayTotals>,
     monthStart: LocalDate,
     onPreviousMonth: () -> Unit,
-    onNextMonth: () -> Unit
+    onNextMonth: () -> Unit,
+    dayRecords: List<HealthRecord>,
+    selectedDay: LocalDate,
+    onPreviousDay: () -> Unit,
+    onNextDay: () -> Unit
 ) {
     var metric by rememberSaveable {
         mutableStateOf(MetricFilter.STEPS)
@@ -82,6 +88,12 @@ fun ProgressScreen(
     val weekEnd = weekStart.plusDays(6)
     val weekLabel = "${weekStart.format(dateFormatter)} to ${weekEnd.format(dateFormatter)}"
     val isMonth = period == "Month"
+    val isDay = period == "Day"
+
+    val dayPoints = dayRecords
+        .sortedBy { it.time }
+        .map { it.time to metricValue(it, metric) }
+        .filter { it.second > 0 }
 
     val days = if (isMonth) {
         (0 until monthStart.lengthOfMonth()).map {
@@ -93,35 +105,46 @@ fun ProgressScreen(
 
     val periodTotals = if (isMonth) monthTotals else weekTotals
 
-    val rangeLabel = if (isMonth) {
-        monthStart.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
-    } else {
-        weekLabel
+    val rangeLabel = when {
+        isDay -> dayLabel(selectedDay.toString(), LocalDate.now())
+        isMonth -> monthStart.format(
+            DateTimeFormatter.ofPattern("MMMM yyyy")
+        )
+
+        else -> weekLabel
     }
 
-    val barLabels = if (isMonth) {
-        days.map { day ->
+    val barLabels = when {
+        isDay -> dayPoints.map { it.first }
+
+        isMonth -> days.map { day ->
             if (day.dayOfMonth == 1 || day.dayOfMonth % 5 == 0) {
                 "${day.dayOfMonth}"
             } else {
                 ""
             }
         }
-    } else {
-        listOf("M", "T", "W", "T", "F", "S", "S")
+
+        else -> listOf("M", "T", "W", "T", "F", "S", "S")
     }
 
     val today = LocalDate.now()
 
-    val values = days.map { day ->
-        val totals = periodTotals.firstOrNull { it.date == day.toString() }
+    val values = if (isDay) {
+        dayPoints.map { it.second }.runningReduce { a, b -> a + b }
+    } else {
+        days.map { day ->
+            val totals = periodTotals.firstOrNull {
+                it.date == day.toString()
+            }
 
-        when (metric) {
-            MetricFilter.STEPS -> totals?.steps ?: 0
-            MetricFilter.CALORIES -> totals?.calories ?: 0
-            MetricFilter.WATER -> totals?.waterMl ?: 0
-            MetricFilter.SLEEP -> totals?.sleepMinutes ?: 0
-            MetricFilter.ALL -> 0
+            when (metric) {
+                MetricFilter.STEPS -> totals?.steps ?: 0
+                MetricFilter.CALORIES -> totals?.calories ?: 0
+                MetricFilter.WATER -> totals?.waterMl ?: 0
+                MetricFilter.SLEEP -> totals?.sleepMinutes ?: 0
+                MetricFilter.ALL -> 0
+            }
         }
     }
 
@@ -149,8 +172,19 @@ fun ProgressScreen(
         barColor
     }
 
-    val todayIndex = days.indexOf(today)
-    val futureFrom = if (todayIndex >= 0) todayIndex + 1 else days.size
+    val todayIndex = if (isDay) {
+        values.lastIndex
+    } else {
+        days.indexOf(today)
+    }
+
+    val futureFrom = if (isDay) {
+        values.size
+    } else if (todayIndex >= 0) {
+        todayIndex + 1
+    } else {
+        days.size
+    }
 
     val daysSoFar = futureFrom
     val counted = values.take(daysSoFar)
@@ -265,7 +299,13 @@ fun ProgressScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = if (isMonth) onPreviousMonth else onPreviousWeek) {
+                IconButton(
+                    onClick = when {
+                        isDay -> onPreviousDay
+                        isMonth -> onPreviousMonth
+                        else -> onPreviousWeek
+                    }
+                ) {
                     Text("‹", style = MaterialTheme.typography.headlineMedium)
                 }
 
@@ -276,51 +316,75 @@ fun ProgressScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                IconButton(onClick = if (isMonth) onNextMonth else onNextWeek) {
+                IconButton(
+                    onClick = when {
+                        isDay -> onNextDay
+                        isMonth -> onNextMonth
+                        else -> onNextWeek
+                    }
+                ) {
                     Text("›", style = MaterialTheme.typography.headlineMedium)
                 }
             }
 
-            WeekBarChart(
-                values = values,
-                goal = goal,
-                todayIndex = todayIndex,
-                futureFrom = futureFrom,
-                color = barColor,
-                goalTopColor = goalTopColor,
-                metric = metric,
-                labels = barLabels,
-                barWidth = if (isMonth) 6.dp else 20.dp,
-                showValues = !isMonth
-            )
+            if (isDay && values.isEmpty()) {
+                Text(
+                    text = "No ${metric.label.lowercase()} recorded on this day",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 40.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                WeekBarChart(
+                    values = values,
+                    goal = goal,
+                    todayIndex = todayIndex,
+                    futureFrom = futureFrom,
+                    color = barColor,
+                    goalTopColor = goalTopColor,
+                    metric = metric,
+                    labels = barLabels,
+                    barWidth = if (isMonth) 6.dp else 20.dp,
+                    showValues = !isMonth
+                )
+            }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            SummaryCard(
-                label = "Total",
-                value = summaryValue(total, metric),
-                unit = unit,
-                modifier = Modifier.weight(1f)
-            )
+        if (isDay) {
+            val dayTotal = values.lastOrNull() ?: 0
+            val toGo = goal - dayTotal
 
-            SummaryCard(
-                label = "Daily avg",
-                value = summaryValue(average, metric),
-                unit = unit,
-                modifier = Modifier.weight(1f)
-            )
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SummaryCard(
+                    label = "Total",
+                    value = summaryValue(total, metric),
+                    unit = unit,
+                    modifier = Modifier.weight(1f)
+                )
 
-            SummaryCard(
-                label = "Goal met",
-                value = "$goalDays",
-                unit = "of $daysSoFar days",
-                modifier = Modifier.weight(1f)
-            )
+                SummaryCard(
+                    label = "Daily avg",
+                    value = summaryValue(average, metric),
+                    unit = unit,
+                    modifier = Modifier.weight(1f)
+                )
+
+                SummaryCard(
+                    label = "Goal met",
+                    value = "$goalDays",
+                    unit = "of $daysSoFar days",
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
+
 
 private fun shortValue(
     value: Int,
@@ -334,6 +398,17 @@ private fun shortValue(
 
         else -> "$value"
     }
+}
+
+private fun metricValue(
+    record: HealthRecord,
+    metric: MetricFilter
+): Int = when (metric) {
+    MetricFilter.STEPS -> record.steps
+    MetricFilter.CALORIES -> record.calories
+    MetricFilter.WATER -> record.waterMl
+    MetricFilter.SLEEP -> record.sleepMinutes
+    MetricFilter.ALL -> 0
 }
 
 @Composable

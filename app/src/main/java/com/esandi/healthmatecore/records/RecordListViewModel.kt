@@ -131,6 +131,30 @@ class RecordListViewModel(
         }
     }
 
+    private val day = MutableStateFlow(LocalDate.now())
+
+    val selectedDay: StateFlow<LocalDate> = day
+
+    val dayRecords: StateFlow<List<HealthRecord>> = day
+        .flatMapLatest { d ->
+            repository.getRecordsByDate(d.toString())
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    fun previousDay() {
+        day.value = day.value.minusDays(1)
+    }
+
+    fun nextDay() {
+        if (day.value < LocalDate.now()) {
+            day.value = day.value.plusDays(1)
+        }
+    }
+
     fun addRecord(record: HealthRecord) {
         viewModelScope.launch {
             repository.addRecord(record)
