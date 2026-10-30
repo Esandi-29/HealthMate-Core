@@ -9,12 +9,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.esandi.healthmatecore.data.GoalsRepository
 import com.esandi.healthmatecore.data.HealthMateDatabase
 import com.esandi.healthmatecore.data.HealthRecordRepository
 import com.esandi.healthmatecore.records.RecordListViewModel
 import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
 import kotlinx.coroutines.launch
 import com.esandi.healthmatecore.navigation.HealthMateApp
+import com.esandi.healthmatecore.profile.GoalsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,6 +25,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val database = HealthMateDatabase.getDatabase(this)
         val repository = HealthRecordRepository(database.healthRecordDao())
+        val goalsRepository = GoalsRepository(database.goalsDao())
 
         lifecycleScope.launch {
             repository.addSampleDataIfEmpty()
@@ -37,8 +40,19 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
+            val goalsViewModel: GoalsViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        GoalsViewModel(goalsRepository)
+                    }
+                }
+            )
+
             HealthMateCoreTheme {
-                HealthMateApp(viewModel = viewModel)
+                HealthMateApp(
+                    viewModel = viewModel,
+                    goalsViewModel = goalsViewModel
+                )
             }
         }
     }

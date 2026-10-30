@@ -37,11 +37,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.esandi.healthmatecore.R
+import com.esandi.healthmatecore.data.Goals
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.details.RecordDetailsScreen
 import com.esandi.healthmatecore.history.HistoryScreen
 import com.esandi.healthmatecore.home.RecordsScreen
 import com.esandi.healthmatecore.profile.GoalsScreen
+import com.esandi.healthmatecore.profile.GoalsViewModel
 import com.esandi.healthmatecore.profile.ProfileScreen
 import com.esandi.healthmatecore.progress.ProgressScreen
 import com.esandi.healthmatecore.recordform.AddRecordScreen
@@ -87,7 +89,10 @@ fun PlaceholderScreen(
 }
 
 @Composable
-fun HealthMateApp(viewModel: RecordListViewModel) {
+fun HealthMateApp(
+    viewModel: RecordListViewModel,
+    goalsViewModel: GoalsViewModel
+) {
 
     val records by viewModel.records.collectAsState()
     val todayTotals by viewModel.todayTotals.collectAsState()
@@ -99,6 +104,7 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
     val monthStart by viewModel.selectedMonthStart.collectAsState()
     val dayRecords by viewModel.dayRecords.collectAsState()
     val selectedDay by viewModel.selectedDay.collectAsState()
+    val goals by goalsViewModel.goals.collectAsState()
 
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -280,8 +286,21 @@ fun HealthMateApp(viewModel: RecordListViewModel) {
 
             composable("goals") {
                 GoalsScreen(
-                    onSave = { _, _, _, _, _ ->
-                        // P13c: save these to the goals table
+                    initialSteps = goals.steps,
+                    initialCalories = goals.calories,
+                    initialWater = goals.waterMl,
+                    initialSleepMinutes = goals.sleepMinutes,
+                    initialActiveDays = goals.activeDays,
+                    onSave = { steps, calories, water, sleepMinutes, activeDays ->
+                        goalsViewModel.saveGoals(
+                            Goals(
+                                steps = steps,
+                                calories = calories,
+                                waterMl = water,
+                                sleepMinutes = sleepMinutes,
+                                activeDays = activeDays
+                            )
+                        )
                         scope.launch {
                             snackbarHostState.showSnackbar("Goals saved")
                         }
