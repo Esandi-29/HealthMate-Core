@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.esandi.healthmatecore.data.DayTotals
+import com.esandi.healthmatecore.data.Goals
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.records.MetricFilter
 import com.esandi.healthmatecore.records.dayLabel
@@ -68,7 +69,8 @@ fun ProgressScreen(
     dayRecords: List<HealthRecord>,
     selectedDay: LocalDate,
     onPreviousDay: () -> Unit,
-    onNextDay: () -> Unit
+    onNextDay: () -> Unit,
+    goals: Goals
 ) {
     var metric by rememberSaveable {
         mutableStateOf(MetricFilter.STEPS)
@@ -149,10 +151,10 @@ fun ProgressScreen(
     }
 
     val goal = when (metric) {
-        MetricFilter.STEPS -> 8000
-        MetricFilter.CALORIES -> 400
-        MetricFilter.WATER -> 2000
-        MetricFilter.SLEEP -> 480
+        MetricFilter.STEPS -> goals.steps
+        MetricFilter.CALORIES -> goals.calories
+        MetricFilter.WATER -> goals.waterMl
+        MetricFilter.SLEEP -> goals.sleepMinutes
         MetricFilter.ALL -> 0
     }
 
@@ -354,6 +356,31 @@ fun ProgressScreen(
         if (isDay) {
             val dayTotal = values.lastOrNull() ?: 0
             val toGo = goal - dayTotal
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SummaryCard(
+                    label = "Total",
+                    value = summaryValue(dayTotal, metric),
+                    unit = unit,
+                    modifier = Modifier.weight(1f)
+                )
+
+                SummaryCard(
+                    label = "Goal",
+                    value = summaryValue(goal, metric),
+                    unit = unit,
+                    modifier = Modifier.weight(1f)
+                )
+
+                SummaryCard(
+                    label = "To go",
+                    value = if (toGo <= 0) "Done" else summaryValue(toGo, metric),
+                    unit = if (toGo <= 0) "goal met" else unit,
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
         } else {
             Row(

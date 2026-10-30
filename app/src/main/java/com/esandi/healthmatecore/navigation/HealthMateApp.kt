@@ -217,6 +217,7 @@ fun HealthMateApp(
                 RecordsScreen(
                     records = allRecords,
                     totals = todayTotals,
+                    goals = goals,
                     onDatePicked = { date ->
                         viewModel.setDateFilter(date)
                         navController.navigate("history") {
@@ -264,7 +265,8 @@ fun HealthMateApp(
                     dayRecords = dayRecords,
                     selectedDay = selectedDay,
                     onPreviousDay = viewModel::previousDay,
-                    onNextDay = viewModel::nextDay
+                    onNextDay = viewModel::nextDay,
+                    goals = goals
                 )
             }
 

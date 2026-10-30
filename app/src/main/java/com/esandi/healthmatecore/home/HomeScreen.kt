@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.esandi.healthmatecore.R
 import com.esandi.healthmatecore.data.DailyTotals
+import com.esandi.healthmatecore.data.Goals
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.ui.theme.BrightBlue
 import com.esandi.healthmatecore.ui.theme.CaloriesTextDark
@@ -62,6 +63,7 @@ import java.time.temporal.TemporalAdjusters
 fun RecordsScreen(
     records: List<HealthRecord>,
     totals: DailyTotals,
+    goals: Goals,
     onDatePicked: (String) -> Unit,
 ) {
     Column(
@@ -76,7 +78,7 @@ fun RecordsScreen(
             onDayClick = onDatePicked
         )
 
-        TodaySummary(totals = totals)
+        TodaySummary(totals = totals, goals = goals)
 
         LatestRecords(records = records)
 
@@ -188,7 +190,7 @@ fun WeekStrip(
 }
 
 @Composable
-fun TodaySummary(totals: DailyTotals) {
+fun TodaySummary(totals: DailyTotals, goals: Goals) {
     val sleepHours = totals.sleepMinutes / 60
     val sleepRemainder = totals.sleepMinutes % 60
     val dark = isSystemInDarkTheme()
@@ -212,7 +214,7 @@ fun TodaySummary(totals: DailyTotals) {
         ) {
             StepsRing(
                 steps = totals.steps,
-                goal = 8000
+                goal = goals.steps
             )
         }
 
@@ -255,7 +257,7 @@ fun TodaySummary(totals: DailyTotals) {
         }
         WaterGoalBar(
             waterMl = totals.waterMl,
-            goal = 2000
+            goal = goals.waterMl
         )
 
     }
