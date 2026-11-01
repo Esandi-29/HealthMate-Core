@@ -1,18 +1,28 @@
 package com.esandi.healthmatecore.home
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,9 +32,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -44,6 +57,9 @@ import com.esandi.healthmatecore.ui.theme.CaloriesTextLight
 import com.esandi.healthmatecore.ui.theme.DeepBlue
 import com.esandi.healthmatecore.ui.theme.DeepPurple
 import com.esandi.healthmatecore.ui.theme.ErrorRed
+import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
+import com.esandi.healthmatecore.ui.theme.ProfileAmberStart
+import com.esandi.healthmatecore.ui.theme.ProfileOrangeEnd
 import com.esandi.healthmatecore.ui.theme.RingLimeDark
 import com.esandi.healthmatecore.ui.theme.RingLimeLight
 import com.esandi.healthmatecore.ui.theme.RingMintDark
@@ -58,13 +74,6 @@ import com.esandi.healthmatecore.ui.theme.WaterTextLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
-import androidx.compose.ui.unit.sp
-import com.esandi.healthmatecore.ui.theme.ProfileAmberStart
-import com.esandi.healthmatecore.ui.theme.ProfileOrangeEnd
-import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
 
 @Composable
 fun RecordsScreen(
@@ -112,6 +121,31 @@ fun StreakBar(
     val progressFraction = progress / 7f
     val pillShape = RoundedCornerShape(50)
 
+    // Infinite animation for the streak flame
+    val transition = rememberInfiniteTransition(label = "flamePulse")
+
+    // Gentle size pulse
+    val pulse by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 850),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "flameScale"
+    )
+
+    // Subtle brightness flicker
+    val flicker by transition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 650),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "flameAlpha"
+    )
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -127,8 +161,11 @@ fun StreakBar(
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_flame),
-            contentDescription = "Streak",
-            modifier = Modifier.size(16.dp),
+            contentDescription = null,
+            modifier = Modifier
+                .size(16.dp)
+                .scale(if (streak > 0) pulse else 1f)
+                .alpha(if (streak > 0) flicker else 1f),
             tint = ProfileOrangeEnd
         )
 
