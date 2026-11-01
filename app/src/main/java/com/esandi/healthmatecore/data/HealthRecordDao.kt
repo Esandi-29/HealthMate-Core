@@ -66,4 +66,16 @@ interface HealthRecordDao {
         start: String,
         end: String
     ): Flow<List<DayTotals>>
+
+    @Query(
+        "SELECT " +
+                "date, " +
+                "COALESCE(SUM(steps), 0) AS steps, " +
+                "COALESCE(SUM(calories), 0) AS calories, " +
+                "COALESCE(SUM(water), 0) AS waterMl, " +
+                "COALESCE(SUM(sleep_minutes), 0) AS sleepMinutes " +
+                "FROM health_records " +
+                "GROUP BY date ORDER BY date"
+    )
+    fun getAllDailyTotals(): Flow<List<DayTotals>>
 }
