@@ -40,6 +40,8 @@ import com.esandi.healthmatecore.R
 import com.esandi.healthmatecore.data.Goals
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.details.RecordDetailsScreen
+import com.esandi.healthmatecore.gamification.GamificationCalculator
+import com.esandi.healthmatecore.gamification.GamificationViewModel
 import com.esandi.healthmatecore.history.HistoryScreen
 import com.esandi.healthmatecore.home.RecordsScreen
 import com.esandi.healthmatecore.profile.GoalsScreen
@@ -50,8 +52,8 @@ import com.esandi.healthmatecore.recordform.AddRecordScreen
 import com.esandi.healthmatecore.recordform.EditRecordScreen
 import com.esandi.healthmatecore.records.RecordListViewModel
 import kotlinx.coroutines.launch
-import com.esandi.healthmatecore.gamification.GamificationCalculator
 import java.time.LocalDate
+
 
 data class BottomTab(
     val route: String,
@@ -93,7 +95,8 @@ fun PlaceholderScreen(
 @Composable
 fun HealthMateApp(
     viewModel: RecordListViewModel,
-    goalsViewModel: GoalsViewModel
+    goalsViewModel: GoalsViewModel,
+    gamificationViewModel: GamificationViewModel
 ) {
 
     val records by viewModel.records.collectAsState()
@@ -117,16 +120,21 @@ fun HealthMateApp(
         )
     }
 
-    val badges = remember(allDailyTotals, goals) {
-        GamificationCalculator.badges(
-            history = allDailyTotals,
-            goals = goals
-        )
-    }
+    val badges by gamificationViewModel.badges.collectAsState()
 
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        gamificationViewModel.newBadges.collect { badgeName ->
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    "Badge earned: $badgeName"
+                )
+            }
+        }
+    }
 
     fun deleteWithUndo(record: HealthRecord) {
         viewModel.deleteRecord(record)

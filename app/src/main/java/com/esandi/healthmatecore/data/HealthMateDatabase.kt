@@ -7,11 +7,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [HealthRecord::class, Goals::class],
-    version = 2,
+    entities = [HealthRecord::class,
+        Goals::class,
+        EarnedBadge::class],
+    version = 3,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 1, to = 2)
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3)
     ]
 )
 abstract class HealthMateDatabase : RoomDatabase() {
@@ -19,6 +22,9 @@ abstract class HealthMateDatabase : RoomDatabase() {
     abstract fun healthRecordDao(): HealthRecordDao
 
     abstract fun goalsDao(): GoalsDao
+
+    abstract fun earnedBadgeDao(): EarnedBadgeDao
+
     companion object {
         @Volatile
         private var INSTANCE: HealthMateDatabase? = null

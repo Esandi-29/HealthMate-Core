@@ -17,6 +17,8 @@ import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
 import kotlinx.coroutines.launch
 import com.esandi.healthmatecore.navigation.HealthMateApp
 import com.esandi.healthmatecore.profile.GoalsViewModel
+import com.esandi.healthmatecore.data.BadgeRepository
+import com.esandi.healthmatecore.gamification.GamificationViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,6 +28,7 @@ class MainActivity : ComponentActivity() {
         val database = HealthMateDatabase.getDatabase(this)
         val repository = HealthRecordRepository(database.healthRecordDao())
         val goalsRepository = GoalsRepository(database.goalsDao())
+        val badgeRepository = BadgeRepository(database.earnedBadgeDao())
 
         lifecycleScope.launch {
             repository.addSampleDataIfEmpty()
@@ -48,10 +51,23 @@ class MainActivity : ComponentActivity() {
                 }
             )
 
+            val gamificationViewModel: GamificationViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        GamificationViewModel(
+                            recordsRepository = repository,
+                            goalsRepository = goalsRepository,
+                            badgeRepository = badgeRepository
+                        )
+                    }
+                }
+            )
+
             HealthMateCoreTheme {
                 HealthMateApp(
                     viewModel = viewModel,
-                    goalsViewModel = goalsViewModel
+                    goalsViewModel = goalsViewModel,
+                    gamificationViewModel = gamificationViewModel
                 )
             }
         }
