@@ -58,10 +58,18 @@ import com.esandi.healthmatecore.ui.theme.WaterTextLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.sp
+import com.esandi.healthmatecore.ui.theme.ProfileAmberStart
+import com.esandi.healthmatecore.ui.theme.ProfileOrangeEnd
+import com.esandi.healthmatecore.ui.theme.HealthMateCoreTheme
 
 @Composable
 fun RecordsScreen(
     records: List<HealthRecord>,
+    streak: Int,
     totals: DailyTotals,
     goals: Goals,
     onDatePicked: (String) -> Unit,
@@ -72,6 +80,15 @@ fun RecordsScreen(
             .verticalScroll(rememberScrollState())
     ) {
         WelcomeHeader()
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        StreakBar(
+            streak = streak,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         WeekStrip(
             records = records,
@@ -85,6 +102,82 @@ fun RecordsScreen(
 
     }
 }
+
+@Composable
+fun StreakBar(
+    streak: Int,
+    modifier: Modifier = Modifier
+) {
+    val progress = streak.coerceAtLeast(0).coerceAtMost(7)
+    val progressFraction = progress / 7f
+    val pillShape = RoundedCornerShape(50)
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(30.dp)
+            .clip(pillShape)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(
+                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                pillShape
+            )
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_flame),
+            contentDescription = "Streak",
+            modifier = Modifier.size(16.dp),
+            tint = ProfileOrangeEnd
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = if (streak <= 0) {
+                "Start your streak today"
+            } else {
+                "$streak-day streak"
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(4.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progressFraction)
+                    .fillMaxHeight()
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                ProfileAmberStart,
+                                ProfileOrangeEnd
+                            )
+                        )
+                    )
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = "$progress/7",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
 
 @Preview(showBackground = true)
 @Composable
@@ -472,6 +565,23 @@ fun LatestRecords(records: List<HealthRecord>) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun StreakBarPreview() {
+    HealthMateCoreTheme {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            StreakBar(streak = 0)
+            StreakBar(streak = 4)
+            StreakBar(streak = 10)
         }
     }
 }

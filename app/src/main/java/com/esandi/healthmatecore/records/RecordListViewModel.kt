@@ -48,6 +48,14 @@ class RecordListViewModel(
                 initialValue = emptyList()
             )
 
+    val allDailyTotals: StateFlow<List<DayTotals>> =
+        repository.getAllDailyTotals()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
+
     fun setDateFilter(date: String) {
         selectedDate.value = date
     }

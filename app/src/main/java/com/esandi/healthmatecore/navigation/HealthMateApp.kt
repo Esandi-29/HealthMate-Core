@@ -50,6 +50,8 @@ import com.esandi.healthmatecore.recordform.AddRecordScreen
 import com.esandi.healthmatecore.recordform.EditRecordScreen
 import com.esandi.healthmatecore.records.RecordListViewModel
 import kotlinx.coroutines.launch
+import com.esandi.healthmatecore.gamification.GamificationCalculator
+import java.time.LocalDate
 
 data class BottomTab(
     val route: String,
@@ -98,6 +100,7 @@ fun HealthMateApp(
     val todayTotals by viewModel.todayTotals.collectAsState()
     val dateFilter by viewModel.dateFilter.collectAsState()
     val allRecords by viewModel.allRecords.collectAsState()
+    val allDailyTotals by viewModel.allDailyTotals.collectAsState()
     val weekTotals by viewModel.weekTotals.collectAsState()
     val weekStart by viewModel.selectedWeekStart.collectAsState()
     val monthTotals by viewModel.monthTotals.collectAsState()
@@ -105,6 +108,14 @@ fun HealthMateApp(
     val dayRecords by viewModel.dayRecords.collectAsState()
     val selectedDay by viewModel.selectedDay.collectAsState()
     val goals by goalsViewModel.goals.collectAsState()
+
+    val streak = remember(allDailyTotals, goals) {
+        GamificationCalculator.currentStreak(
+            history = allDailyTotals,
+            stepsGoal = goals.steps,
+            today = LocalDate.now()
+        )
+    }
 
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -216,6 +227,7 @@ fun HealthMateApp(
             composable("home") {
                 RecordsScreen(
                     records = allRecords,
+                    streak = streak,
                     totals = todayTotals,
                     goals = goals,
                     onDatePicked = { date ->
