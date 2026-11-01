@@ -117,6 +117,13 @@ fun HealthMateApp(
         )
     }
 
+    val badges = remember(allDailyTotals, goals) {
+        GamificationCalculator.badges(
+            history = allDailyTotals,
+            goals = goals
+        )
+    }
+
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -285,6 +292,7 @@ fun HealthMateApp(
             composable("profile") {
                 ProfileScreen(
                     name = "Esandi",
+                    badges = badges,
                     onOptionClick = { route ->
                         navController.navigate(route)
                     }

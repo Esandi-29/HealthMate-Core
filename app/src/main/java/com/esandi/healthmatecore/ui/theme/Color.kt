@@ -58,3 +58,7 @@ val ProfileVioletStart = Color(0xFF6D60CF)
 val ProfileVioletEnd = Color(0xFF9A8EEF)
 val ProfileCoralStart = Color(0xFFE77572)
 val ProfileMagentaEnd = Color(0xFFC62B91)
+
+// Badge gradient colours
+val BadgeAmber = Color(0xFFF6CF48)
+val BadgePurplePink = Color(0xFFAF329D)
