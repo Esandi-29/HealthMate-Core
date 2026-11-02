@@ -48,6 +48,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.painterResource
@@ -82,7 +83,7 @@ import com.esandi.healthmatecore.ui.theme.WaterTextLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.foundation.layout.IntrinsicSize
 
 @Composable
 fun RecordsScreen(
@@ -327,6 +328,25 @@ fun TodaySummary(totals: DailyTotals, goals: Goals) {
     val sleepRemainder = totals.sleepMinutes % 60
     val dark = isSystemInDarkTheme()
 
+    val sleepProgress = if (goals.sleepMinutes > 0) {
+        (totals.sleepMinutes.toFloat() / goals.sleepMinutes.toFloat())
+            .coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    var sleepStarted by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        sleepStarted = true
+    }
+
+    val animatedSleepProgress by animateFloatAsState(
+        targetValue = if (sleepStarted) sleepProgress else 0f,
+        animationSpec = tween(durationMillis = 1000),
+        label = "sleepProgress"
+    )
+
     Column(
         modifier = Modifier.padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -354,6 +374,7 @@ fun TodaySummary(totals: DailyTotals, goals: Goals) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .height(IntrinsicSize.Min)
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -364,7 +385,9 @@ fun TodaySummary(totals: DailyTotals, goals: Goals) {
                 color = if (dark) CaloriesTextDark else CaloriesTextLight,
                 gradientStart = ErrorRed,
                 gradientEnd = SunsetOrange,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
             )
 
             MetricTile(
@@ -374,7 +397,9 @@ fun TodaySummary(totals: DailyTotals, goals: Goals) {
                 color = if (dark) WaterTextDark else WaterTextLight,
                 gradientStart = BrightBlue,
                 gradientEnd = DeepBlue,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
             )
 
             MetricTile(
@@ -384,7 +409,14 @@ fun TodaySummary(totals: DailyTotals, goals: Goals) {
                 color = if (dark) SleepTextDark else SleepTextLight,
                 gradientStart = SoftViolet,
                 gradientEnd = DeepPurple,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                topContent = {
+                    SleepDial(
+                        fill = animatedSleepProgress
+                    )
+                }
             )
         }
         WaterGoalBar(
@@ -555,6 +587,133 @@ private fun DrawScope.drawFootprint(
 }
 
 @Composable
+fun SleepDial(
+    fill: Float,
+    modifier: Modifier = Modifier
+) {
+    val f = fill.coerceIn(0f, 1f)
+
+    val isDark = isSystemInDarkTheme()
+
+    val trackColor = if (isDark) {
+        SleepTextDark.copy(alpha = 0.25f)
+    } else {
+        SleepTextLight.copy(alpha = 0.25f)
+    }
+
+    val moonColor = if (isDark) {
+        SleepTextDark
+    } else {
+        SleepTextLight
+    }
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Half-circle dial
+        Canvas(
+            modifier = Modifier.size(
+                width = 56.dp,
+                height = 30.dp
+            )
+        ) {
+            val strokeWidth = 5.dp.toPx()
+            val side = size.width - strokeWidth
+            val radius = side / 2
+
+            val arcCenter = Offset(
+                size.width / 2,
+                strokeWidth / 2 + radius
+            )
+
+            val arcTopLeft = Offset(
+                strokeWidth / 2,
+                strokeWidth / 2
+            )
+
+            val arcSize = Size(side, side)
+
+            val arcStyle = Stroke(
+                width = strokeWidth,
+                cap = StrokeCap.Round
+            )
+
+            drawArc(
+                color = trackColor,
+                startAngle = 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                topLeft = arcTopLeft,
+                size = arcSize,
+                style = arcStyle
+            )
+
+            if (f > 0f) {
+                drawArc(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            SoftViolet,
+                            SunsetOrange
+                        )
+                    ),
+                    startAngle = 180f,
+                    sweepAngle = 180f * f,
+                    useCenter = false,
+                    topLeft = arcTopLeft,
+                    size = arcSize,
+                    style = arcStyle
+                )
+
+                rotate(
+                    degrees = 180f * f,
+                    pivot = arcCenter
+                ) {
+                    val tipPosition = Offset(
+                        arcCenter.x - radius,
+                        arcCenter.y
+                    )
+
+                    drawCircle(
+                        color = Color.White,
+                        radius = 3.dp.toPx(),
+                        center = tipPosition
+                    )
+
+                    drawCircle(
+                        color = SunsetOrange,
+                        radius = 3.dp.toPx(),
+                        center = tipPosition,
+                        style = Stroke(width = 1.5.dp.toPx())
+                    )
+                }
+            }
+        }
+
+        // Moon and sun icons beneath the dial
+        Row(
+            modifier = Modifier.width(56.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_sleep),
+                contentDescription = "Sleep start",
+                modifier = Modifier.size(11.dp),
+                tint = moonColor
+            )
+
+            Icon(
+                painter = painterResource(id = R.drawable.ic_sun),
+                contentDescription = "Morning",
+                modifier = Modifier.size(11.dp),
+                tint = SunsetOrange
+            )
+        }
+    }
+}
+
+@Composable
 fun MetricTile(
     value: String,
     label: String,
@@ -562,7 +721,8 @@ fun MetricTile(
     color: Color,
     gradientStart: Color,
     gradientEnd: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    topContent: (@Composable () -> Unit)? = null
 ) {
     Column(
         modifier = modifier
@@ -570,33 +730,46 @@ fun MetricTile(
             .background(
                 Brush.linearGradient(
                     listOf(
-                        gradientStart.copy(alpha = if (isSystemInDarkTheme()) 0.20f else 0.14f),
-                        gradientEnd.copy(alpha = if (isSystemInDarkTheme()) 0.20f else 0.14f)
+                        gradientStart.copy(
+                            alpha = if (isSystemInDarkTheme()) 0.20f else 0.14f
+                        ),
+                        gradientEnd.copy(
+                            alpha = if (isSystemInDarkTheme()) 0.20f else 0.14f
+                        )
                     )
                 )
             )
             .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Icon(
-            painter = painterResource(id = icon),
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(24.dp)
-        )
 
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = color,
-            maxLines = 1
-        )
+        if (topContent != null) {
+            topContent()
+        } else {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+        }
 
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                color = color,
+                maxLines = 1
+            )
+
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -797,6 +970,22 @@ fun WaterBottlePreview() {
             WaterBottle(fill = 0.3f)
             WaterBottle(fill = 0.6f)
             WaterBottle(fill = 1f)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SleepDialPreview() {
+    HealthMateCoreTheme {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SleepDial(fill = 0f)
+            SleepDial(fill = 0.5f)
+            SleepDial(fill = 1f)
         }
     }
 }
