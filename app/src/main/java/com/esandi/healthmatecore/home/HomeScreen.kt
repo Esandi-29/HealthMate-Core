@@ -2,6 +2,7 @@ package com.esandi.healthmatecore.home
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -32,12 +33,18 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -67,6 +74,7 @@ import com.esandi.healthmatecore.ui.theme.RingMintLight
 import com.esandi.healthmatecore.ui.theme.Roboto
 import com.esandi.healthmatecore.ui.theme.SleepTextDark
 import com.esandi.healthmatecore.ui.theme.SleepTextLight
+import com.esandi.healthmatecore.ui.theme.SoftBlack
 import com.esandi.healthmatecore.ui.theme.SoftViolet
 import com.esandi.healthmatecore.ui.theme.SunsetOrange
 import com.esandi.healthmatecore.ui.theme.WaterTextDark
@@ -74,11 +82,7 @@ import com.esandi.healthmatecore.ui.theme.WaterTextLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.drawscope.DrawScope
 
 @Composable
 fun RecordsScreen(
@@ -402,12 +406,30 @@ fun StepsRing(
         0f
     }
 
+    var started by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        started = true
+    }
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (started) progress else 0f,
+        animationSpec = tween(durationMillis = 1000),
+        label = "stepsProgress"
+    )
+
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
     val ringStart =
         if (isSystemInDarkTheme()) RingMintDark else RingMintLight
 
     val ringEnd =
         if (isSystemInDarkTheme()) RingLimeDark else RingLimeLight
+
+    val footprintColor = if (isSystemInDarkTheme()) {
+        SoftBlack
+    } else {
+        Color.White
+    }
 
     Box(
         modifier = Modifier.size(170.dp),
@@ -429,22 +451,51 @@ fun StepsRing(
                 style = stroke
             )
 
-            if (progress > 0f) {
+            if (animatedProgress > 0f) {
+
+                // Green arc — draw first
                 rotate(degrees = -90f) {
                     drawArc(
                         brush = Brush.sweepGradient(
                             colorStops = arrayOf(
                                 0f to ringStart,
-                                progress to ringEnd,
+                                animatedProgress to ringEnd,
                                 1f to ringStart
                             ),
                             center = center
                         ),
                         startAngle = 0f,
-                        sweepAngle = 360f * progress,
+                        sweepAngle = 360f * animatedProgress,
                         useCenter = false,
                         style = stroke
                     )
+                }
+
+                val radius = size.width / 2
+                val top = Offset(center.x, center.y - radius)
+
+                val tipAngle = 360f * animatedProgress
+
+                rotate(degrees = tipAngle - 4f) {
+                    drawFootprint(
+                        at = Offset(
+                            top.x,
+                            top.y - 2.5.dp.toPx()
+                        ),
+                        color = footprintColor
+                    )
+                }
+
+                if (animatedProgress > 0.05f) {
+                    rotate(degrees = tipAngle - 15f) {
+                        drawFootprint(
+                            at = Offset(
+                                top.x,
+                                top.y + 2.5.dp.toPx()
+                            ),
+                            color = footprintColor
+                        )
+                    }
                 }
             }
         }
@@ -464,6 +515,43 @@ fun StepsRing(
             )
         }
     }
+}
+
+private fun DrawScope.drawFootprint(
+    at: Offset,
+    color: Color
+) {
+    val footWidth = 10.dp.toPx()
+    val footHeight = 6.dp.toPx()
+
+    drawOval(
+        color = color,
+        topLeft = Offset(
+            at.x - footWidth / 2,
+            at.y - footHeight / 2
+        ),
+        size = Size(footWidth, footHeight)
+    )
+
+    val toeRadius = 1.2.dp.toPx()
+
+    drawCircle(
+        color = color,
+        radius = toeRadius,
+        center = Offset(at.x + 7.dp.toPx(), at.y - 2.dp.toPx())
+    )
+
+    drawCircle(
+        color = color,
+        radius = toeRadius,
+        center = Offset(at.x + 9.dp.toPx(), at.y)
+    )
+
+    drawCircle(
+        color = color,
+        radius = toeRadius,
+        center = Offset(at.x + 7.dp.toPx(), at.y + 2.dp.toPx())
+    )
 }
 
 @Composable
