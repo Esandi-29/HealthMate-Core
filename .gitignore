@@ -19,3 +19,4 @@ local.properties
 /app/release/
 *.apk
 *.aab
+/.idea/
