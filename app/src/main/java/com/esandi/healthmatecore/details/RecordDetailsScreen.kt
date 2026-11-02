@@ -22,14 +22,17 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.esandi.healthmatecore.R
 import com.esandi.healthmatecore.data.HealthRecord
 import com.esandi.healthmatecore.records.dayLabel
 import com.esandi.healthmatecore.ui.theme.CaloriesTextDark
@@ -41,10 +44,6 @@ import com.esandi.healthmatecore.ui.theme.SleepTextLight
 import com.esandi.healthmatecore.ui.theme.WaterTextDark
 import com.esandi.healthmatecore.ui.theme.WaterTextLight
 import java.time.LocalDate
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import com.esandi.healthmatecore.R
-import com.esandi.healthmatecore.details.RecordDetailsScreen
 
 @Composable
 fun RecordDetailsScreen(
@@ -138,7 +137,7 @@ fun RecordDetailsScreen(
             )
 
             Text(
-                text = record.note.orEmpty(),
+                text = record.note,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp)

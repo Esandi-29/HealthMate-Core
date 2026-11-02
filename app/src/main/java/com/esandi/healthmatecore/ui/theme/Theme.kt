@@ -1,6 +1,5 @@
 package com.esandi.healthmatecore.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -62,7 +61,6 @@ private val DarkColorScheme = darkColorScheme(
 @Composable
 fun HealthMateCoreTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) {
