@@ -74,6 +74,11 @@ import com.esandi.healthmatecore.ui.theme.WaterTextLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @Composable
 fun RecordsScreen(
@@ -213,13 +218,6 @@ fun StreakBar(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun WelcomeHeaderPreview() {
-    WelcomeHeader()
 }
 
 @Composable
@@ -515,6 +513,59 @@ fun MetricTile(
 }
 
 @Composable
+fun WaterBottle(
+    fill: Float,
+    modifier: Modifier = Modifier
+) {
+    val outlineColor = if (isSystemInDarkTheme()) {
+        WaterTextDark
+    } else {
+        WaterTextLight
+    }
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Bottle cap
+        Box(
+            modifier = Modifier
+                .size(width = 10.dp, height = 6.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.outlineVariant)
+        )
+
+        // Bottle body
+        Box(
+            modifier = Modifier
+                .size(width = 26.dp, height = 40.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .border(
+                    width = 1.5.dp,
+                    color = outlineColor,
+                    shape = RoundedCornerShape(8.dp)
+                )
+        ) {
+            // Water fills from the bottom
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(fill.coerceIn(0f, 1f))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                BrightBlue,
+                                DeepBlue
+                            )
+                        )
+                    )
+            )
+        }
+    }
+}
+
+@Composable
 fun WaterGoalBar(
     waterMl: Int,
     goal: Int
@@ -525,28 +576,50 @@ fun WaterGoalBar(
         0f
     }
 
-    Column(
+    var started by remember { mutableStateOf(false) }
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (started) progress else 0f,
+        animationSpec = tween(durationMillis = 700),
+        label = "waterProgress"
+    )
+
+    LaunchedEffect(Unit) {
+        started = true
+    }
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "Water: ${waterMl.coerceAtLeast(0)} of %,d ml".format(goal),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        WaterBottle(fill = animatedProgress)
 
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-            drawStopIndicator = {}
-        )
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Water: ${waterMl.coerceAtLeast(0)} of %,d ml".format(goal),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                drawStopIndicator = {}
+            )
+        }
     }
 }
 
@@ -619,6 +692,23 @@ fun StreakBarPreview() {
             StreakBar(streak = 0)
             StreakBar(streak = 4)
             StreakBar(streak = 10)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun WaterBottlePreview() {
+    HealthMateCoreTheme {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            WaterBottle(fill = 0f)
+            WaterBottle(fill = 0.3f)
+            WaterBottle(fill = 0.6f)
+            WaterBottle(fill = 1f)
         }
     }
 }
