@@ -26,9 +26,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +41,7 @@ import com.esandi.healthmatecore.records.DateRange
 import com.esandi.healthmatecore.records.MetricFilter
 import com.esandi.healthmatecore.records.dayLabel
 import com.esandi.healthmatecore.records.filterRecords
+import com.esandi.healthmatecore.records.recordSummary
 import com.esandi.healthmatecore.ui.theme.BrightBlue
 import com.esandi.healthmatecore.ui.theme.ErrorRed
 import com.esandi.healthmatecore.ui.theme.SoftViolet
@@ -46,8 +49,6 @@ import com.esandi.healthmatecore.ui.theme.SuccessGreen
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 
 @Composable
 fun HistoryScreen(
@@ -322,6 +323,7 @@ fun RecordList(
     }
 }
 
+
 @Composable
 fun RecordRow(
     record: HealthRecord,
@@ -329,31 +331,7 @@ fun RecordRow(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
-    val parts = buildList {
-        if (record.steps > 0) {
-            add("%,d steps".format(record.steps))
-        }
-
-        if (record.calories > 0) {
-            add("%,d kcal".format(record.calories))
-        }
-
-        if (record.waterMl > 0) {
-            add("%,d ml water".format(record.waterMl))
-        }
-
-        if (record.sleepMinutes > 0) {
-            val hours = record.sleepMinutes / 60
-            val minutes = record.sleepMinutes % 60
-            add("${hours}h ${minutes}m sleep")
-        }
-    }
-
-    val recordedText = when {
-        parts.isNotEmpty() -> parts.joinToString(" · ")
-        !record.note.isNullOrBlank() -> record.note
-        else -> "No health data recorded"
-    }
+    val recordedText = recordSummary(record)
 
     Row(
         modifier = Modifier
@@ -375,6 +353,7 @@ fun RecordRow(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+
         TextButton(
             onClick = onEditClick
         ) {
@@ -388,6 +367,7 @@ fun RecordRow(
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

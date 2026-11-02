@@ -253,6 +253,20 @@ fun HealthMateApp(
                             }
                             launchSingleTop = true
                         }
+                    },
+                    onRecordClick = { recordId ->
+                        navController.navigate("details/$recordId")
+                    },
+                    onSeeAllClick = {
+                        viewModel.clearDateFilter()
+
+                        navController.navigate("history") {
+                            popUpTo("home") {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }

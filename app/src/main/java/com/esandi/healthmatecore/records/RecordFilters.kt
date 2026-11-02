@@ -64,4 +64,34 @@ fun dayLabel(date: String, today: LocalDate): String {
     }
 }
 
+fun recordSummary(record: HealthRecord): String {
+    val parts = buildList {
+        if (record.steps > 0) {
+            add("%,d steps".format(record.steps))
+        }
+
+        if (record.calories > 0) {
+            add("%,d kcal".format(record.calories))
+        }
+
+        if (record.waterMl > 0) {
+            add("%,d ml water".format(record.waterMl))
+        }
+
+        if (record.sleepMinutes > 0) {
+            val hours = record.sleepMinutes / 60
+            val minutes = record.sleepMinutes % 60
+            add("${hours}h ${minutes}m sleep")
+        }
+    }
+
+    val recordedText = when {
+        parts.isNotEmpty() -> parts.joinToString(" · ")
+        !record.note.isNullOrBlank() -> record.note
+        else -> "No health data recorded"
+    }
+
+    return recordedText
+}
+
 

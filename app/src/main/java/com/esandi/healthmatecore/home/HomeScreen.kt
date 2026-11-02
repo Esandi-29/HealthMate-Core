@@ -15,6 +15,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,10 +29,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,12 +56,15 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.esandi.healthmatecore.R
 import com.esandi.healthmatecore.data.DailyTotals
 import com.esandi.healthmatecore.data.Goals
 import com.esandi.healthmatecore.data.HealthRecord
+import com.esandi.healthmatecore.records.dayLabel
+import com.esandi.healthmatecore.records.recordSummary
 import com.esandi.healthmatecore.ui.theme.BrightBlue
 import com.esandi.healthmatecore.ui.theme.CaloriesTextDark
 import com.esandi.healthmatecore.ui.theme.CaloriesTextLight
@@ -83,7 +89,7 @@ import com.esandi.healthmatecore.ui.theme.WaterTextLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
-import androidx.compose.foundation.layout.IntrinsicSize
+
 
 @Composable
 fun RecordsScreen(
@@ -92,6 +98,8 @@ fun RecordsScreen(
     totals: DailyTotals,
     goals: Goals,
     onDatePicked: (String) -> Unit,
+    onRecordClick: (Long) -> Unit,
+    onSeeAllClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -116,7 +124,14 @@ fun RecordsScreen(
 
         TodaySummary(totals = totals, goals = goals)
 
-        LatestRecords(records = records)
+        RecentRecordsCard(
+            records = records,
+            onRecordClick = onRecordClick,
+            onSeeAllClick = onSeeAllClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
 
 
     }
@@ -885,60 +900,150 @@ fun WaterGoalBar(
 }
 
 @Composable
-fun LatestRecords(records: List<HealthRecord>) {
-    val lastSteps = records.firstOrNull { it.steps > 0 }
-    val lastCalories = records.firstOrNull { it.calories > 0 }
-    val lastWater = records.firstOrNull { it.waterMl > 0 }
-    val lastSleep = records.firstOrNull { it.sleepMinutes > 0 }
+fun RecentRecordRow(
+    record: HealthRecord,
+    onClick: () -> Unit
+) {
+    val isDark = isSystemInDarkTheme()
 
-    Column(
+    val (icon, color) = when {
+        record.steps > 0 -> R.drawable.ic_steps to
+                if (isDark) RingMintDark else RingMintLight
+
+        record.calories > 0 -> R.drawable.ic_calories to
+                if (isDark) CaloriesTextDark else CaloriesTextLight
+
+        record.waterMl > 0 -> R.drawable.ic_water to
+                if (isDark) WaterTextDark else WaterTextLight
+
+        record.sleepMinutes > 0 -> R.drawable.ic_sleep to
+                if (isDark) SleepTextDark else SleepTextLight
+
+        else -> R.drawable.ic_history to
+                MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    val recordedText = recordSummary(record)
+    val dateText = "${dayLabel(record.date, LocalDate.now())} · ${record.time}"
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = "Latest",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = color
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = recordedText,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = dateText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Icon(
+            painter = painterResource(id = R.drawable.ic_chevron_right),
+            contentDescription = "View record",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
         )
+    }
+}
 
-        lastSteps?.let { record ->
+@Composable
+fun RecentRecordsCard(
+    records: List<HealthRecord>,
+    onRecordClick: (Long) -> Unit,
+    onSeeAllClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = "Last steps: %,d on ${record.date}".format(record.steps),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "Recent records",
+                style = MaterialTheme.typography.titleMedium
             )
+
+            TextButton(
+                onClick = onSeeAllClick
+            ) {
+                Text("See all")
+            }
         }
 
-        lastCalories?.let { record ->
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (records.isEmpty()) {
             Text(
-                text = "Last calories: %,d on ${record.date}".format(record.calories),
-                style = MaterialTheme.typography.bodySmall,
+                text = "No records yet. Tap + to add one.",
+                modifier = Modifier.padding(
+                    horizontal = 16.dp,
+                    vertical = 16.dp
+                ),
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                records.take(3).forEachIndexed { index, record ->
 
-        lastWater?.let { record ->
-            Text(
-                text = "Last water: ${record.waterMl} ml on ${record.date}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+                    if (index > 0) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(
+                                start = 60.dp,
+                                end = 16.dp
+                            ),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
 
-        lastSleep?.let { record ->
-            val hours = record.sleepMinutes / 60
-            val minutes = record.sleepMinutes % 60
-
-            Text(
-                text = "Last sleep: ${hours}h ${minutes}m on ${record.date}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                    RecentRecordRow(
+                        record = record,
+                        onClick = { onRecordClick(record.id) }
+                    )
+                }
+            }
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
@@ -986,6 +1091,53 @@ fun SleepDialPreview() {
             SleepDial(fill = 0f)
             SleepDial(fill = 0.5f)
             SleepDial(fill = 1f)
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RecentRecordsCardPreview() {
+    HealthMateCoreTheme {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            RecentRecordsCard(
+                records = listOf(
+                    HealthRecord(
+                        id = 1L,
+                        date = LocalDate.now().toString(),
+                        time = "14:20",
+                        steps = 8000,
+                        calories = 300,
+                        waterMl = 0,
+                        sleepMinutes = 0,
+                        note = null
+                    ),
+                    HealthRecord(
+                        id = 2L,
+                        date = LocalDate.now().toString(),
+                        time = "11:45",
+                        steps = 0,
+                        calories = 0,
+                        waterMl = 1250,
+                        sleepMinutes = 0,
+                        note = null
+                    ),
+                    HealthRecord(
+                        id = 3L,
+                        date = LocalDate.now().minusDays(1).toString(),
+                        time = "08:30",
+                        steps = 0,
+                        calories = 0,
+                        waterMl = 0,
+                        sleepMinutes = 450,
+                        note = null
+                    )
+                ),
+                onRecordClick = {},
+                onSeeAllClick = {}
+            )
         }
     }
 }
