@@ -2,11 +2,10 @@ package com.esandi.healthmatecore.gamification
 
 import com.esandi.healthmatecore.data.DayTotals
 import com.esandi.healthmatecore.data.Goals
-import com.esandi.healthmatecore.gamification.GamificationCalculator
-import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.LocalDate
 
 class GamificationCalculatorTest {
 

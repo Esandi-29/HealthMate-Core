@@ -17,8 +17,8 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 
 class GamificationViewModel(
-    private val recordsRepository: HealthRecordRepository,
-    private val goalsRepository: GoalsRepository,
+    recordsRepository: HealthRecordRepository,
+    goalsRepository: GoalsRepository,
     private val badgeRepository: BadgeRepository
 ) : ViewModel() {
 
@@ -33,13 +33,11 @@ class GamificationViewModel(
         badgeRepository.getEarnedBadges()
     ) { history, goals, saved ->
 
-        // Calculate currently earned badges
         val calculated = GamificationCalculator.badges(
             history = history,
             goals = goals
         )
 
-        // Create a lookup table of previously saved badges
         val savedByName = saved.associateBy { it.name }
 
         calculated.map { badge ->
@@ -70,7 +68,6 @@ class GamificationViewModel(
                     badge
                 }
 
-                // Still locked
                 else -> badge
             }
         }

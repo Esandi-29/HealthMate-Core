@@ -53,9 +53,8 @@ fun filterRecords(
 }
 
 fun dayLabel(date: String, today: LocalDate): String {
-    val recordDate = LocalDate.parse(date)
 
-    return when (recordDate) {
+    return when (val recordDate = LocalDate.parse(date)) {
         today -> "Today"
         today.minusDays(1) -> "Yesterday"
         else -> recordDate.format(

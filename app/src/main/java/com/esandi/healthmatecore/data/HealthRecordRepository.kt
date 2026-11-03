@@ -14,10 +14,6 @@ class HealthRecordRepository(
         return healthRecordDao.getRecordsByDate(date)
     }
 
-    suspend fun getRecordById(id: Long): HealthRecord? {
-        return healthRecordDao.getRecordById(id)
-    }
-
     suspend fun addRecord(record: HealthRecord): Long {
         return healthRecordDao.insert(record)
     }

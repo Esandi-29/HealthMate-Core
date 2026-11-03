@@ -188,10 +188,9 @@ fun ProgressScreen(
         days.size
     }
 
-    val daysSoFar = futureFrom
-    val counted = values.take(daysSoFar)
+    val counted = values.take(futureFrom)
     val total = counted.sum()
-    val average = if (daysSoFar > 0) total / daysSoFar else 0
+    val average = if (futureFrom > 0) total / futureFrom else 0
     val goalDays = counted.count { it >= goal }
 
     val unit = when (metric) {
@@ -404,7 +403,7 @@ fun ProgressScreen(
                 SummaryCard(
                     label = "Goal met",
                     value = "$goalDays",
-                    unit = "of $daysSoFar days",
+                    unit = "of $futureFrom days",
                     modifier = Modifier.weight(1f)
                 )
             }
