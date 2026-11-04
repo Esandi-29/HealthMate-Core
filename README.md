@@ -72,7 +72,3 @@ HealthMate Core uses a Room database named `healthmate.db` (version 3), consisti
 - **Database tests:** Run `./gradlew connectedAndroidTest` to execute `HealthRecordDaoTest`. This requires a running Android emulator or connected device.
 
 You can also run individual test classes by right-clicking the test class in Android Studio and selecting **Run**.
-
-## Use of AI
-
-Claude was used as a learning assistant to explain concepts, help me understand how to write the code myself, and guide me when I encountered difficulties. For some earlier features, Claude also provided code that I integrated, tested and debugged. From 1 November, I wrote the code myself, using Claude only for explanations and guidance. Design decisions were mine, informed by mock-ups and options Claude helped prepare, and all testing was done by me. The full AI acknowledgement is included in the project report.
