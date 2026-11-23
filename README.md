@@ -13,6 +13,11 @@ HealthMate Core is an Android health and wellness tracking application designed 
 - **Animations:** Includes a pulsing streak flame, filling water bottle, animated walking footprints on the steps ring and a sweeping sleep progress dial.
 - **Light and dark mode:** The app follows the device's light or dark theme setting.
 
+## Screenshots
+
+<img src="docs/assets/Home.png" width="200"> <img src="docs/assets/History.png" width="200">
+<img src="docs/assets/Progress.png" width="200"> <img src="docs/assets/Profile.png" width="200">
+
 ## Tech stack
 
 - **Language:** Kotlin
